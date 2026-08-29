@@ -1,0 +1,21 @@
+# Core data processing
+numpy
+pandas
+scipy
+
+# Streamlit application
+streamlit
+plotly
+
+# Optimization
+pulp
+networkx
+
+# Utilities
+tqdm
+
+# Genetic Algorithm 
+# deap
+
+# Testing
+pytest
