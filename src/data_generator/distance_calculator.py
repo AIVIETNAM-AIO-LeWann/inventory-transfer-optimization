@@ -29,8 +29,8 @@ REQUIRED_STORE_COLUMNS = (
 )
 
 
-def validate_store_data( 
-        stores: pd.DataFrame, 
+def validate_store_data(
+    stores: pd.DataFrame,
 ) -> None:
     """Validate store coordinates used for routing."""
 
@@ -220,7 +220,7 @@ def generate_fallback_duration_matrix(
 
 
 def build_osrm_coordinate_text(
-        stores: pd.DataFrame, 
+    stores: pd.DataFrame,
 ) -> str:
     """
     Convert store coordinates to OSRM format.
@@ -663,4 +663,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-    

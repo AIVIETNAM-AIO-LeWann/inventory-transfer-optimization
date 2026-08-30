@@ -352,7 +352,7 @@ def validate_config() -> None:
         raise ValueError(
             "INTRA_CITY_HANDLING_TIME_MINUTES "
             "must not be negative."
-    )
+        )
 
     if INTER_CITY_HANDLING_TIME_MINUTES < 0:
         raise ValueError(
