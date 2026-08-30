@@ -6,6 +6,11 @@ scipy
 # Streamlit application
 streamlit
 plotly
+folium
+streamlit-folium
+
+# Routing
+requests>=2.31.0
 
 # Optimization
 pulp
@@ -14,7 +19,7 @@ networkx
 # Utilities
 tqdm
 
-# Genetic Algorithm 
+# Genetic Algorithm
 # deap
 
 # Testing

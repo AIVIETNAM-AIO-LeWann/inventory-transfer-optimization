@@ -25,6 +25,7 @@ PRODUCTS_FILE = DATA_DIR / "products.csv"
 SALES_FILE = DATA_DIR / "sales_data.csv"
 INVENTORY_FILE = DATA_DIR / "inventory_data.csv"
 DISTANCE_MATRIX_FILE = DATA_DIR / "distance_matrix.csv"
+DURATION_MATRIX_FILE = DATA_DIR / "duration_matrix.csv"
 TRANSPORT_COST_MATRIX_FILE = DATA_DIR / "transport_cost_matrix.csv"
 
 # Used by the data validator to check required input files
@@ -34,6 +35,7 @@ REQUIRED_DATA_FILES = (
     SALES_FILE,
     INVENTORY_FILE,
     DISTANCE_MATRIX_FILE,
+    DURATION_MATRIX_FILE,
     TRANSPORT_COST_MATRIX_FILE,
 )
 
@@ -146,6 +148,20 @@ EXCESS_RATIO = 0.20
 # Earth radius used by the Haversine distance formula
 EARTH_RADIUS_KM = 6371.0
 
+# Routing method: "osrm" or "haversine"
+ROUTING_METHOD = "osrm"
+
+# Public OSRM Table API used for development
+OSRM_TABLE_URL = (
+    "https://router.project-osrm.org/"
+    "table/v1/driving"
+)
+
+OSRM_REQUEST_TIMEOUT_SECONDS = 60
+
+# Used to estimate duration if OSRM is unavailable
+FALLBACK_AVERAGE_SPEED_KPH = 50.0
+
 # Cost of transporting one product unit for one kilometer
 TRANSPORT_COST_PER_KM_PER_UNIT = 100.0
 
@@ -153,11 +169,26 @@ TRANSPORT_COST_PER_KM_PER_UNIT = 100.0
 MIN_TRANSPORT_COST_PER_UNIT = 500.0
 
 # Maximum allowed transfer distance
-MAX_TRANSFER_DISTANCE_KM = 1_500.0
+MAX_TRANSFER_DISTANCE_KM = 1_600.0
+
+# =========================================================
+# 10. TRANSFER ROUTE POLICY
+# =========================================================
+
+INTRA_CITY_ROUTE = "intra_city"
+INTER_CITY_ROUTE = "inter_city"
+
+# Additional time for preparation, dispatch, and receiving
+INTRA_CITY_HANDLING_TIME_MINUTES = 30
+INTER_CITY_HANDLING_TIME_MINUTES = 6 * 60
+
+# Maximum total lead time
+INTRA_CITY_MAX_LEAD_TIME_MINUTES = 3 * 60
+INTER_CITY_MAX_LEAD_TIME_MINUTES = 36 * 60
 
 
 # =========================================================
-# 10. RULE-BASED OPTIMIZATION SETTINGS
+# 11. RULE-BASED OPTIMIZATION SETTINGS
 # =========================================================
 
 # These weights must add up to 1.0
@@ -167,7 +198,7 @@ SHORTAGE_WEIGHT = 0.30
 
 
 # =========================================================
-# 11. LINEAR PROGRAMMING SETTINGS
+# 12. LINEAR PROGRAMMING SETTINGS
 # =========================================================
 
 # Penalty applied to each unit of unresolved shortage
@@ -175,7 +206,7 @@ UNMET_SHORTAGE_PENALTY_PER_UNIT = 100_000.0
 
 
 # =========================================================
-# 12. GENETIC ALGORITHM SETTINGS
+# 13. GENETIC ALGORITHM SETTINGS
 # =========================================================
 
 GA_POPULATION_SIZE = 100
@@ -186,7 +217,7 @@ GA_TOURNAMENT_SIZE = 3
 
 
 # =========================================================
-# 13. HELPER FUNCTIONS
+# 14. HELPER FUNCTIONS
 # =========================================================
 
 def ensure_project_directories() -> dict[str, Path]:
@@ -298,6 +329,66 @@ def validate_config() -> None:
             raise ValueError(
                 f"The store count for {city} must be greater than zero."
             )
+
+    if ROUTING_METHOD not in {"osrm", "haversine"}:
+        raise ValueError(
+            "ROUTING_METHOD must be either "
+            "'osrm' or 'haversine'."
+        )
+
+    if OSRM_REQUEST_TIMEOUT_SECONDS <= 0:
+        raise ValueError(
+            "OSRM_REQUEST_TIMEOUT_SECONDS "
+            "must be greater than zero."
+        )
+
+    if FALLBACK_AVERAGE_SPEED_KPH <= 0:
+        raise ValueError(
+            "FALLBACK_AVERAGE_SPEED_KPH "
+            "must be greater than zero."
+        )
+    
+    if INTRA_CITY_HANDLING_TIME_MINUTES < 0:
+        raise ValueError(
+            "INTRA_CITY_HANDLING_TIME_MINUTES "
+            "must not be negative."
+    )
+
+    if INTER_CITY_HANDLING_TIME_MINUTES < 0:
+        raise ValueError(
+            "INTER_CITY_HANDLING_TIME_MINUTES "
+            "must not be negative."
+        )
+
+    if INTRA_CITY_MAX_LEAD_TIME_MINUTES <= 0:
+        raise ValueError(
+            "INTRA_CITY_MAX_LEAD_TIME_MINUTES "
+            "must be greater than zero."
+        )
+
+    if INTER_CITY_MAX_LEAD_TIME_MINUTES <= 0:
+        raise ValueError(
+            "INTER_CITY_MAX_LEAD_TIME_MINUTES "
+            "must be greater than zero."
+        )
+
+    if (
+        INTRA_CITY_HANDLING_TIME_MINUTES
+        >= INTRA_CITY_MAX_LEAD_TIME_MINUTES
+    ):
+        raise ValueError(
+            "Intra-city handling time must be lower "
+            "than the maximum intra-city lead time."
+        )
+
+    if (
+        INTER_CITY_HANDLING_TIME_MINUTES
+        >= INTER_CITY_MAX_LEAD_TIME_MINUTES
+    ):
+        raise ValueError(
+            "Inter-city handling time must be lower "
+            "than the maximum inter-city lead time."
+        )
 
 
 if __name__ == "__main__":
