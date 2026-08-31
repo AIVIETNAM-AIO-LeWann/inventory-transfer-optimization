@@ -44,9 +44,21 @@ REQUIRED_DATA_FILES = (
 # 3. RESULT FILES
 # =========================================================
 
-INVENTORY_ANALYSIS_FILE = RESULTS_DIR / "inventory_analysis.csv"
-BEST_TRANSFER_PLAN_FILE = RESULTS_DIR / "best_transfer_plan.csv"
-ALGORITHM_COMPARISON_FILE = RESULTS_DIR / "algorithm_comparison.csv"
+INVENTORY_ANALYSIS_FILE = (
+    RESULTS_DIR / "inventory_analysis.csv"
+)
+
+ROUTE_ANALYSIS_FILE = (
+    RESULTS_DIR / "route_analysis.csv"
+)
+
+BEST_TRANSFER_PLAN_FILE = (
+    RESULTS_DIR / "best_transfer_plan.csv"
+)
+
+ALGORITHM_COMPARISON_FILE = (
+    RESULTS_DIR / "algorithm_comparison.csv"
+)
 
 
 # =========================================================
