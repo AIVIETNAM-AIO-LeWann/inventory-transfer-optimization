@@ -7,10 +7,14 @@ from src.config import (
     INTER_CITY_ROUTE,
     INTRA_CITY_ROUTE,
 )
+
 from src.metrics import (
     calculate_plan_metrics,
     create_algorithm_comparison,
+    evaluate_optimizer,
     save_algorithm_comparison,
+    save_best_transfer_plan,
+    select_best_transfer_plan,
 )
 
 
@@ -332,3 +336,181 @@ def test_save_algorithm_comparison(
         loaded_comparison.loc[0, "algorithm"]
         == "Greedy"
     )
+
+def test_evaluate_optimizer(
+    sample_inventory_analysis: pd.DataFrame,
+    sample_transfer_plan: pd.DataFrame,
+) -> None:
+    """An optimizer should return its plan and metrics."""
+
+    def fake_optimizer(
+        *,
+        inventory_analysis: pd.DataFrame,
+        route_analysis: pd.DataFrame,
+    ) -> pd.DataFrame:
+        del inventory_analysis
+        del route_analysis
+
+        return sample_transfer_plan.copy()
+
+    route_analysis = pd.DataFrame(
+        [{"is_allowed": True}]
+    )
+
+    transfer_plan, metrics = evaluate_optimizer(
+        algorithm_name="Fake Optimizer",
+        optimizer=fake_optimizer,
+        inventory_analysis=sample_inventory_analysis,
+        route_analysis=route_analysis,
+    )
+
+    pd.testing.assert_frame_equal(
+        transfer_plan,
+        sample_transfer_plan,
+    )
+
+    assert metrics["algorithm"] == "Fake Optimizer"
+    assert metrics["transferred_quantity"] == 12
+    assert metrics["remaining_shortage"] == 0
+    assert metrics["execution_time_seconds"] >= 0
+
+
+def test_select_best_transfer_plan(
+    sample_transfer_plan: pd.DataFrame,
+) -> None:
+    """The plan with rank one should be selected."""
+
+    greedy_plan = sample_transfer_plan.copy()
+
+    linear_programming_plan = (
+        sample_transfer_plan.copy()
+    )
+
+    linear_programming_plan[
+        "transfer_id"
+    ] = [
+        "LP0001",
+        "LP0002",
+    ]
+
+    comparison = pd.DataFrame(
+        [
+            {
+                "rank": 2,
+                "algorithm": "Greedy",
+            },
+            {
+                "rank": 1,
+                "algorithm": "Linear Programming",
+            },
+        ]
+    )
+
+    transfer_plans = {
+        "Greedy": greedy_plan,
+        "Linear Programming": (
+            linear_programming_plan
+        ),
+    }
+
+    (
+        best_algorithm,
+        best_plan,
+    ) = select_best_transfer_plan(
+        comparison=comparison,
+        transfer_plans=transfer_plans,
+    )
+
+    assert best_algorithm == "Linear Programming"
+
+    pd.testing.assert_frame_equal(
+        best_plan,
+        linear_programming_plan,
+    )
+
+    best_plan.loc[0, "quantity"] = 999
+
+    assert (
+        linear_programming_plan.loc[0, "quantity"]
+        == 5
+    )
+
+
+def test_select_best_transfer_plan_rejects_missing_plan(
+    sample_transfer_plan: pd.DataFrame,
+) -> None:
+    """The selected algorithm must have a transfer plan."""
+
+    comparison = pd.DataFrame(
+        [
+            {
+                "rank": 1,
+                "algorithm": "Linear Programming",
+            }
+        ]
+    )
+
+    with pytest.raises(
+        KeyError,
+        match="No transfer plan was provided",
+    ):
+        select_best_transfer_plan(
+            comparison=comparison,
+            transfer_plans={
+                "Greedy": sample_transfer_plan,
+            },
+        )
+
+
+def test_save_best_transfer_plan(
+    sample_transfer_plan: pd.DataFrame,
+    tmp_path,
+) -> None:
+    """The best plan should include its algorithm name."""
+
+    output_path = (
+        tmp_path / "best_transfer_plan.csv"
+    )
+
+    saved_path = save_best_transfer_plan(
+        transfer_plan=sample_transfer_plan,
+        algorithm_name="Linear Programming",
+        output_path=output_path,
+    )
+
+    assert saved_path.exists()
+
+    loaded_plan = pd.read_csv(saved_path)
+
+    assert loaded_plan.columns[0] == "algorithm"
+
+    assert loaded_plan[
+        "algorithm"
+    ].unique().tolist() == [
+        "Linear Programming"
+    ]
+
+    assert loaded_plan["quantity"].sum() == 12
+    assert (
+        loaded_plan["total_transport_cost"].sum()
+        == 850.0
+    )
+
+
+def test_save_best_transfer_plan_rejects_blank_name(
+    sample_transfer_plan: pd.DataFrame,
+    tmp_path,
+) -> None:
+    """The best algorithm name must not be blank."""
+
+    with pytest.raises(
+        ValueError,
+        match="algorithm_name must not be blank",
+    ):
+        save_best_transfer_plan(
+            transfer_plan=sample_transfer_plan,
+            algorithm_name="   ",
+            output_path=(
+                tmp_path / "best_transfer_plan.csv"
+            ),
+        )

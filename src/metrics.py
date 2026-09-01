@@ -1,5 +1,6 @@
 """Calculate and compare optimization performance metrics."""
 
+from collections.abc import Callable
 from pathlib import Path
 from time import perf_counter
 
@@ -8,12 +9,12 @@ import pandas as pd
 
 from src.config import (
     ALGORITHM_COMPARISON_FILE,
+    BEST_TRANSFER_PLAN_FILE,
     INTER_CITY_ROUTE,
     INTRA_CITY_ROUTE,
 )
 from src.data_loader import load_all_data
 from src.inventory_analyzer import analyze_inventory
-from src.optimizers.greedy import optimize_greedy
 from src.route_analyzer import analyze_routes
 
 
@@ -361,6 +362,40 @@ def calculate_plan_metrics(
     }
 
 
+def evaluate_optimizer(
+    algorithm_name: str,
+    optimizer: Callable[..., pd.DataFrame],
+    inventory_analysis: pd.DataFrame,
+    route_analysis: pd.DataFrame,
+) -> tuple[
+    pd.DataFrame,
+    dict[str, str | int | float],
+]:
+    """Run one optimizer and calculate its metrics."""
+
+    start_time = perf_counter()
+
+    transfer_plan = optimizer(
+        inventory_analysis=inventory_analysis,
+        route_analysis=route_analysis,
+    )
+
+    execution_time_seconds = (
+        perf_counter() - start_time
+    )
+
+    metrics = calculate_plan_metrics(
+        inventory_analysis=inventory_analysis,
+        transfer_plan=transfer_plan,
+        algorithm_name=algorithm_name,
+        execution_time_seconds=(
+            execution_time_seconds
+        ),
+    )
+
+    return transfer_plan, metrics
+
+
 def create_algorithm_comparison(
     metric_records: list[
         dict[str, str | int | float]
@@ -403,6 +438,54 @@ def create_algorithm_comparison(
     return comparison
 
 
+def select_best_transfer_plan(
+    comparison: pd.DataFrame,
+    transfer_plans: dict[str, pd.DataFrame],
+) -> tuple[str, pd.DataFrame]:
+    """Select the highest-ranked transfer plan."""
+
+    if comparison.empty:
+        raise ValueError(
+            "comparison must not be empty."
+        )
+
+    required_columns = {
+        "rank",
+        "algorithm",
+    }
+
+    missing_columns = (
+        required_columns - set(comparison.columns)
+    )
+
+    if missing_columns:
+        raise ValueError(
+            "comparison is missing columns: "
+            f"{sorted(missing_columns)}"
+        )
+
+    best_row = comparison.sort_values(
+        by="rank",
+        ascending=True,
+    ).iloc[0]
+
+    best_algorithm = str(
+        best_row["algorithm"]
+    )
+
+    if best_algorithm not in transfer_plans:
+        raise KeyError(
+            "No transfer plan was provided for "
+            f"algorithm: {best_algorithm}"
+        )
+
+    best_plan = transfer_plans[
+        best_algorithm
+    ].copy()
+
+    return best_algorithm, best_plan
+
+
 def save_algorithm_comparison(
     comparison: pd.DataFrame,
     output_path: str | Path = (
@@ -427,8 +510,56 @@ def save_algorithm_comparison(
     return destination.resolve()
 
 
+def save_best_transfer_plan(
+    transfer_plan: pd.DataFrame,
+    algorithm_name: str,
+    output_path: str | Path = (
+        BEST_TRANSFER_PLAN_FILE
+    ),
+) -> Path:
+    """Save the highest-ranked transfer plan."""
+
+    if not algorithm_name.strip():
+        raise ValueError(
+            "algorithm_name must not be blank."
+        )
+
+    destination = Path(output_path)
+
+    destination.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    plan_to_save = transfer_plan.copy()
+
+    plan_to_save.insert(
+        0,
+        "algorithm",
+        algorithm_name,
+    )
+
+    plan_to_save.to_csv(
+        destination,
+        index=False,
+        encoding="utf-8-sig",
+    )
+
+    return destination.resolve()
+
+
 def main() -> None:
-    """Evaluate the greedy optimizer."""
+    """Evaluate and compare all inventory optimizers."""
+
+    from src.optimizers.genetic_algorithm import (
+        optimize_genetic_algorithm,
+    )
+    from src.optimizers.greedy import (
+        optimize_greedy,
+    )
+    from src.optimizers.linear_programming import (
+        optimize_linear_programming,
+    )
 
     project_data = load_all_data()
 
@@ -446,38 +577,83 @@ def main() -> None:
         ),
     )
 
-    start_time = perf_counter()
-
-    greedy_plan = optimize_greedy(
-        inventory_analysis=inventory_analysis,
-        route_analysis=route_analysis,
-    )
-
-    execution_time_seconds = (
-        perf_counter() - start_time
-    )
-
-    greedy_metrics = calculate_plan_metrics(
-        inventory_analysis=inventory_analysis,
-        transfer_plan=greedy_plan,
-        algorithm_name="Greedy",
-        execution_time_seconds=(
-            execution_time_seconds
+    optimizers = (
+        (
+            "Greedy",
+            optimize_greedy,
+        ),
+        (
+            "Linear Programming",
+            optimize_linear_programming,
+        ),
+        (
+            "Genetic Algorithm",
+            optimize_genetic_algorithm,
         ),
     )
 
+    transfer_plans: dict[str, pd.DataFrame] = {}
+    metric_records: list[
+        dict[str, str | int | float]
+    ] = []
+
+    for algorithm_name, optimizer in optimizers:
+        print(f"Running {algorithm_name}...")
+
+        (
+            transfer_plan,
+            metrics,
+        ) = evaluate_optimizer(
+            algorithm_name=algorithm_name,
+            optimizer=optimizer,
+            inventory_analysis=inventory_analysis,
+            route_analysis=route_analysis,
+        )
+
+        transfer_plans[
+            algorithm_name
+        ] = transfer_plan
+
+        metric_records.append(metrics)
+
     comparison = create_algorithm_comparison(
-        metric_records=[
-            greedy_metrics,
-        ]
+        metric_records=metric_records
     )
 
-    output_path = save_algorithm_comparison(
-        comparison
+    (
+        best_algorithm,
+        best_transfer_plan,
+    ) = select_best_transfer_plan(
+        comparison=comparison,
+        transfer_plans=transfer_plans,
     )
 
-    print("Optimization metrics calculated successfully.")
-    print(f"Saved to: {output_path}")
+    comparison_output_path = (
+        save_algorithm_comparison(
+            comparison=comparison
+        )
+    )
+
+    best_plan_output_path = (
+        save_best_transfer_plan(
+            transfer_plan=best_transfer_plan,
+            algorithm_name=best_algorithm,
+        )
+    )
+
+    print()
+    print(
+        "Algorithm comparison completed successfully."
+    )
+    print(
+        "Comparison saved to: "
+        f"{comparison_output_path}"
+    )
+    print(
+        "Best plan saved to: "
+        f"{best_plan_output_path}"
+    )
+    print(f"Best algorithm: {best_algorithm}")
     print()
     print(comparison.to_string(index=False))
 

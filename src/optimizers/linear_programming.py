@@ -5,6 +5,7 @@ from time import perf_counter
 
 import pandas as pd
 import pulp
+from cbcbox import cbc_bin_path
 
 from src.config import (
     INTER_CITY_ROUTE,
@@ -255,21 +256,21 @@ def build_transfer_candidates(
 def create_solver(
     show_solver_messages: bool = False,
 ):
-    """Create an available CBC solver."""
+    """Create a CBC solver using the cbcbox binary."""
 
-    available_solvers = set(
-        pulp.listSolvers(onlyAvailable=True)
+    solver_path = Path(
+        cbc_bin_path()
     )
 
-    if "COIN_CMD" not in available_solvers:
+    if not solver_path.is_file():
         raise RuntimeError(
-            "COIN_CMD is not available. "
-            "Install CBC with: "
-            "python -m pip install \"pulp[cbc]==3.3.2\""
+            "CBC executable was not found: "
+            f"{solver_path}"
         )
 
     return pulp.COIN_CMD(
-        msg=show_solver_messages
+        path=str(solver_path),
+        msg=show_solver_messages,
     )
 
 def optimize_linear_programming(
