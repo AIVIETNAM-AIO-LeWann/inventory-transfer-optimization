@@ -68,6 +68,10 @@ LINEAR_PROGRAMMING_TRANSFER_PLAN_FILE = (
     RESULTS_DIR / "linear_programming_transfer_plan.csv"
 )
 
+GENETIC_ALGORITHM_TRANSFER_PLAN_FILE = (
+    RESULTS_DIR / "genetic_algorithm_transfer_plan.csv"
+)
+
 # =========================================================
 # 4. RANDOM SEED
 # =========================================================

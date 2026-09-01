@@ -20,7 +20,7 @@ networkx
 tqdm
 
 # Genetic Algorithm
-# deap
+deap==1.4.4
 
 # Testing
 pytest
