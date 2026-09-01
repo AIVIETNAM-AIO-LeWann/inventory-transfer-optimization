@@ -52,6 +52,10 @@ ROUTE_ANALYSIS_FILE = (
     RESULTS_DIR / "route_analysis.csv"
 )
 
+GREEDY_TRANSFER_PLAN_FILE = (
+    RESULTS_DIR / "greedy_transfer_plan.csv"
+)
+
 BEST_TRANSFER_PLAN_FILE = (
     RESULTS_DIR / "best_transfer_plan.csv"
 )
