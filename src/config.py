@@ -64,6 +64,9 @@ ALGORITHM_COMPARISON_FILE = (
     RESULTS_DIR / "algorithm_comparison.csv"
 )
 
+LINEAR_PROGRAMMING_TRANSFER_PLAN_FILE = (
+    RESULTS_DIR / "linear_programming_transfer_plan.csv"
+)
 
 # =========================================================
 # 4. RANDOM SEED
@@ -218,7 +221,7 @@ SHORTAGE_WEIGHT = 0.30
 # =========================================================
 
 # Penalty applied to each unit of unresolved shortage
-UNMET_SHORTAGE_PENALTY_PER_UNIT = 100_000.0
+UNMET_SHORTAGE_PENALTY_PER_UNIT = 1_000_000.0
 
 
 # =========================================================

@@ -13,7 +13,7 @@ streamlit-folium
 requests>=2.31.0
 
 # Optimization
-pulp
+pulp[cbc]==3.3.2
 networkx
 
 # Utilities
