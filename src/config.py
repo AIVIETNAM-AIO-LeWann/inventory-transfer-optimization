@@ -72,6 +72,10 @@ GENETIC_ALGORITHM_TRANSFER_PLAN_FILE = (
     RESULTS_DIR / "genetic_algorithm_transfer_plan.csv"
 )
 
+DAILY_DEMAND_FORECAST_FILE = (
+    RESULTS_DIR / "daily_demand_forecast.csv"
+)
+
 # =========================================================
 # 4. RANDOM SEED
 # =========================================================
@@ -238,9 +242,62 @@ GA_CROSSOVER_PROBABILITY = 0.70
 GA_MUTATION_PROBABILITY = 0.10
 GA_TOURNAMENT_SIZE = 3
 
+# =========================================================
+# 14. DEMAND FORECASTING SETTINGS
+# =========================================================
+
+HISTORICAL_AVERAGE_METHOD = "historical_average"
+MOVING_AVERAGE_METHOD = "moving_average"
+
+SUPPORTED_FORECAST_METHODS = (
+    HISTORICAL_AVERAGE_METHOD,
+    MOVING_AVERAGE_METHOD,
+)
+
+DEFAULT_FORECAST_METHOD = (
+    HISTORICAL_AVERAGE_METHOD
+)
+
+MIN_FORECAST_HORIZON_DAYS = 1
+MAX_FORECAST_HORIZON_DAYS = 14
+
+DEFAULT_FORECAST_HORIZON_DAYS = 7
+
+SHORT_TERM_REPLENISHMENT_DAYS = (
+    MIN_INVENTORY_DAYS
+)
+
+LONG_TERM_REPLENISHMENT_DAYS = (
+    TARGET_INVENTORY_DAYS
+)
+
+FORECAST_HORIZON_PRESETS = (
+    1,
+    5,
+    7,
+    14,
+)
+
+MOVING_AVERAGE_WINDOW_DAYS = 7
 
 # =========================================================
-# 14. HELPER FUNCTIONS
+# 15. OPTIMIZATION PIPELINE SETTINGS
+# =========================================================
+
+GREEDY_OPTIMIZER = "greedy"
+LINEAR_PROGRAMMING_OPTIMIZER = "linear_programming"
+GENETIC_ALGORITHM_OPTIMIZER = "genetic_algorithm"
+
+SUPPORTED_OPTIMIZERS = (
+    GREEDY_OPTIMIZER,
+    LINEAR_PROGRAMMING_OPTIMIZER,
+    GENETIC_ALGORITHM_OPTIMIZER,
+)
+
+DEFAULT_OPTIMIZER = GREEDY_OPTIMIZER
+
+# =========================================================
+# 16. HELPER FUNCTIONS
 # =========================================================
 
 def ensure_project_directories() -> dict[str, Path]:
@@ -413,6 +470,98 @@ def validate_config() -> None:
             "than the maximum inter-city lead time."
         )
 
+    if not SUPPORTED_FORECAST_METHODS:
+        raise ValueError(
+            "SUPPORTED_FORECAST_METHODS "
+            "must not be empty."
+        )
+
+    if (
+        DEFAULT_FORECAST_METHOD
+        not in SUPPORTED_FORECAST_METHODS
+    ):
+        raise ValueError(
+            "DEFAULT_FORECAST_METHOD must exist in "
+            "SUPPORTED_FORECAST_METHODS."
+        )
+
+    if MIN_FORECAST_HORIZON_DAYS <= 0:
+        raise ValueError(
+            "MIN_FORECAST_HORIZON_DAYS "
+            "must be greater than zero."
+        )
+
+    if (
+        MAX_FORECAST_HORIZON_DAYS
+        < MIN_FORECAST_HORIZON_DAYS
+    ):
+        raise ValueError(
+            "MAX_FORECAST_HORIZON_DAYS must be "
+            "greater than or equal to "
+            "MIN_FORECAST_HORIZON_DAYS."
+        )
+
+    if not (
+        MIN_FORECAST_HORIZON_DAYS
+        <= DEFAULT_FORECAST_HORIZON_DAYS
+        <= MAX_FORECAST_HORIZON_DAYS
+    ):
+        raise ValueError(
+            "DEFAULT_FORECAST_HORIZON_DAYS must be "
+            "within the allowed forecast range."
+        )
+
+    if not (
+        MIN_FORECAST_HORIZON_DAYS
+        <= SHORT_TERM_REPLENISHMENT_DAYS
+        < LONG_TERM_REPLENISHMENT_DAYS
+        == MAX_FORECAST_HORIZON_DAYS
+    ):
+        raise ValueError(
+            "Replenishment horizons must satisfy: "
+            "minimum forecast horizon <= short-term "
+            "horizon < long-term horizon == maximum "
+            "forecast horizon."
+        )
+
+    if not FORECAST_HORIZON_PRESETS:
+        raise ValueError(
+            "FORECAST_HORIZON_PRESETS "
+            "must not be empty."
+        )
+
+    invalid_presets = [
+        horizon
+        for horizon in FORECAST_HORIZON_PRESETS
+        if not (
+            MIN_FORECAST_HORIZON_DAYS
+            <= horizon
+            <= MAX_FORECAST_HORIZON_DAYS
+        )
+    ]
+
+    if invalid_presets:
+        raise ValueError(
+            "Forecast horizon presets are outside "
+            f"the allowed range: {invalid_presets}"
+        )
+
+    if MOVING_AVERAGE_WINDOW_DAYS <= 0:
+        raise ValueError(
+            "MOVING_AVERAGE_WINDOW_DAYS "
+            "must be greater than zero."
+        )
+
+    if not SUPPORTED_OPTIMIZERS:
+        raise ValueError(
+        "SUPPORTED_OPTIMIZERS must not be empty."
+        )
+
+    if DEFAULT_OPTIMIZER not in SUPPORTED_OPTIMIZERS:
+        raise ValueError(
+            "DEFAULT_OPTIMIZER must exist in "
+            "SUPPORTED_OPTIMIZERS."
+        )
 
 if __name__ == "__main__":
     validate_config()
