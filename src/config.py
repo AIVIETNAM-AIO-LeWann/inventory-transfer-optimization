@@ -140,7 +140,7 @@ MAX_PROFIT_MARGIN = 0.50
 # =========================================================
 
 SALES_START_DATE = "2026-01-01"
-SALES_DAYS = 90
+SALES_DAYS = 365
 
 # Average daily demand range for generated sales data
 MIN_DAILY_DEMAND = 1
