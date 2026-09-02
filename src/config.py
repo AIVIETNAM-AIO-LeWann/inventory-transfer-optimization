@@ -280,6 +280,12 @@ FORECAST_HORIZON_PRESETS = (
 
 MOVING_AVERAGE_WINDOW_DAYS = 7
 
+FORECAST_EVALUATION_HORIZONS = (
+    1,
+    7,
+    14,
+)
+
 # =========================================================
 # 15. OPTIMIZATION PIPELINE SETTINGS
 # =========================================================
@@ -561,6 +567,29 @@ def validate_config() -> None:
         raise ValueError(
             "DEFAULT_OPTIMIZER must exist in "
             "SUPPORTED_OPTIMIZERS."
+        )
+
+    if not FORECAST_EVALUATION_HORIZONS:
+        raise ValueError(
+            "FORECAST_EVALUATION_HORIZONS "
+            "must not be empty."
+        )
+
+    invalid_evaluation_horizons = [
+        horizon
+        for horizon in FORECAST_EVALUATION_HORIZONS
+        if not (
+            MIN_FORECAST_HORIZON_DAYS
+            <= horizon
+            <= MAX_FORECAST_HORIZON_DAYS
+        )
+    ]
+
+    if invalid_evaluation_horizons:
+        raise ValueError(
+            "Forecast evaluation horizons are "
+            "outside the allowed range: "
+            f"{invalid_evaluation_horizons}"
         )
 
 if __name__ == "__main__":
