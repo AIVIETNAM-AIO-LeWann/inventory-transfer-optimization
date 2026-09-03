@@ -297,6 +297,18 @@ FORECAST_EVALUATION_HORIZONS = (
     14,
 )
 
+FORECAST_LAG_DAYS = (
+    1,
+    7,
+    14,
+)
+
+FORECAST_ROLLING_WINDOWS = (
+    7,
+    14,
+    28,
+)
+
 # =========================================================
 # 15. OPTIMIZATION PIPELINE SETTINGS
 # =========================================================
@@ -628,6 +640,65 @@ def validate_config() -> None:
             "BACKTEST_MIN_TRAINING_DAYS must be "
             "greater than or equal to "
             "MOVING_AVERAGE_WINDOW_DAYS."
+        )
+    if not FORECAST_LAG_DAYS:
+        raise ValueError(
+            "FORECAST_LAG_DAYS must not be empty."
+        )
+
+    invalid_lag_days = [
+        lag_day
+        for lag_day in FORECAST_LAG_DAYS
+        if (
+            not isinstance(lag_day, int)
+            or lag_day <= 0
+        )
+    ]
+
+    if invalid_lag_days:
+        raise ValueError(
+            "Forecast lag days must be positive "
+            f"integers: {invalid_lag_days}"
+        )
+
+    if (
+        len(set(FORECAST_LAG_DAYS))
+        != len(FORECAST_LAG_DAYS)
+    ):
+        raise ValueError(
+            "FORECAST_LAG_DAYS must not contain "
+            "duplicate values."
+        )
+
+    if not FORECAST_ROLLING_WINDOWS:
+        raise ValueError(
+            "FORECAST_ROLLING_WINDOWS "
+            "must not be empty."
+        )
+
+    invalid_rolling_windows = [
+        window
+        for window in FORECAST_ROLLING_WINDOWS
+        if (
+            not isinstance(window, int)
+            or window <= 0
+        )
+    ]
+
+    if invalid_rolling_windows:
+        raise ValueError(
+            "Forecast rolling windows must be "
+            "positive integers: "
+            f"{invalid_rolling_windows}"
+        )
+
+    if (
+        len(set(FORECAST_ROLLING_WINDOWS))
+        != len(FORECAST_ROLLING_WINDOWS)
+    ):
+        raise ValueError(
+            "FORECAST_ROLLING_WINDOWS must not "
+            "contain duplicate values."
         )
 
 if __name__ == "__main__":
