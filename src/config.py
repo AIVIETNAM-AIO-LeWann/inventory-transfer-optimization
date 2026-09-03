@@ -76,6 +76,14 @@ DAILY_DEMAND_FORECAST_FILE = (
     RESULTS_DIR / "daily_demand_forecast.csv"
 )
 
+FORECAST_BACKTEST_RESULTS_FILE = (
+    RESULTS_DIR / "forecast_backtest_results.csv"
+)
+
+FORECAST_BACKTEST_SUMMARY_FILE = (
+    RESULTS_DIR / "forecast_backtest_summary.csv"
+)
+
 # =========================================================
 # 4. RANDOM SEED
 # =========================================================
@@ -245,6 +253,9 @@ GA_TOURNAMENT_SIZE = 3
 # =========================================================
 # 14. DEMAND FORECASTING SETTINGS
 # =========================================================
+
+FORECAST_BACKTEST_FOLDS = 5
+BACKTEST_MIN_TRAINING_DAYS = 90
 
 HISTORICAL_AVERAGE_METHOD = "historical_average"
 MOVING_AVERAGE_METHOD = "moving_average"
@@ -590,6 +601,33 @@ def validate_config() -> None:
             "Forecast evaluation horizons are "
             "outside the allowed range: "
             f"{invalid_evaluation_horizons}"
+        )
+    if (
+    not isinstance(FORECAST_BACKTEST_FOLDS, int)
+    or FORECAST_BACKTEST_FOLDS <= 0
+    ):
+        raise ValueError(
+            "FORECAST_BACKTEST_FOLDS must be "
+            "a positive integer."
+        )
+
+    if (
+        not isinstance(BACKTEST_MIN_TRAINING_DAYS, int)
+        or BACKTEST_MIN_TRAINING_DAYS <= 0
+    ):
+        raise ValueError(
+            "BACKTEST_MIN_TRAINING_DAYS must be "
+            "a positive integer."
+        )
+
+    if (
+        BACKTEST_MIN_TRAINING_DAYS
+        < MOVING_AVERAGE_WINDOW_DAYS
+    ):
+        raise ValueError(
+            "BACKTEST_MIN_TRAINING_DAYS must be "
+            "greater than or equal to "
+            "MOVING_AVERAGE_WINDOW_DAYS."
         )
 
 if __name__ == "__main__":
