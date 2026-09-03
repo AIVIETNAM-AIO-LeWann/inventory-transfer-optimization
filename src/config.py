@@ -314,6 +314,17 @@ MODEL_VALIDATION_RATIO = 0.15
 MODEL_TEST_RATIO = 0.15
 
 
+DECISION_TREE_MAX_DEPTH = 12
+DECISION_TREE_MIN_SAMPLES_SPLIT = 20
+DECISION_TREE_MIN_SAMPLES_LEAF = 10
+
+RANDOM_FOREST_N_ESTIMATORS = 100
+RANDOM_FOREST_MAX_DEPTH = 12
+RANDOM_FOREST_MIN_SAMPLES_SPLIT = 20
+RANDOM_FOREST_MIN_SAMPLES_LEAF = 10
+RANDOM_FOREST_MAX_FEATURES = "sqrt"
+RANDOM_FOREST_N_JOBS = -1
+
 # =========================================================
 # 15. OPTIMIZATION PIPELINE SETTINGS
 # =========================================================
@@ -739,6 +750,92 @@ def validate_config() -> None:
             "MODEL_TEST_RATIO must sum to 1.0."
         )
 
+    decision_tree_integer_settings = {
+        "DECISION_TREE_MAX_DEPTH": (
+            DECISION_TREE_MAX_DEPTH
+        ),
+        "DECISION_TREE_MIN_SAMPLES_SPLIT": (
+            DECISION_TREE_MIN_SAMPLES_SPLIT
+        ),
+        "DECISION_TREE_MIN_SAMPLES_LEAF": (
+            DECISION_TREE_MIN_SAMPLES_LEAF
+        ),
+    }
+
+    for setting_name, setting_value in (
+        decision_tree_integer_settings.items()
+    ):
+        if (
+            isinstance(setting_value, bool)
+            or not isinstance(setting_value, int)
+            or setting_value <= 0
+        ):
+            raise ValueError(
+                f"{setting_name} must be a "
+                "positive integer."
+            )
+
+    if DECISION_TREE_MIN_SAMPLES_SPLIT < 2:
+        raise ValueError(
+            "DECISION_TREE_MIN_SAMPLES_SPLIT "
+            "must be at least 2."
+        )
+
+    random_forest_positive_settings = {
+        "RANDOM_FOREST_N_ESTIMATORS": (
+            RANDOM_FOREST_N_ESTIMATORS
+        ),
+        "RANDOM_FOREST_MAX_DEPTH": (
+            RANDOM_FOREST_MAX_DEPTH
+        ),
+        "RANDOM_FOREST_MIN_SAMPLES_SPLIT": (
+            RANDOM_FOREST_MIN_SAMPLES_SPLIT
+        ),
+        "RANDOM_FOREST_MIN_SAMPLES_LEAF": (
+            RANDOM_FOREST_MIN_SAMPLES_LEAF
+        ),
+    }
+
+    for setting_name, setting_value in (
+        random_forest_positive_settings.items()
+    ):
+        if (
+            isinstance(setting_value, bool)
+            or not isinstance(setting_value, int)
+            or setting_value <= 0
+        ):
+            raise ValueError(
+                f"{setting_name} must be a "
+                "positive integer."
+            )
+
+    if RANDOM_FOREST_MIN_SAMPLES_SPLIT < 2:
+        raise ValueError(
+            "RANDOM_FOREST_MIN_SAMPLES_SPLIT "
+            "must be at least 2."
+        )
+
+    if RANDOM_FOREST_MAX_FEATURES not in (
+        "sqrt",
+        "log2",
+    ):
+        raise ValueError(
+            "RANDOM_FOREST_MAX_FEATURES must be "
+            "'sqrt' or 'log2'."
+        )
+
+    if (
+        isinstance(RANDOM_FOREST_N_JOBS, bool)
+        or not isinstance(
+            RANDOM_FOREST_N_JOBS,
+            int,
+        )
+        or RANDOM_FOREST_N_JOBS == 0
+    ):
+        raise ValueError(
+            "RANDOM_FOREST_N_JOBS must be "
+            "-1 or a positive integer."
+        )
 
 if __name__ == "__main__":
     validate_config()
