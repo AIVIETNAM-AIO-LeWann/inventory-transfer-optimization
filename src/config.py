@@ -325,6 +325,13 @@ RANDOM_FOREST_MIN_SAMPLES_LEAF = 10
 RANDOM_FOREST_MAX_FEATURES = "sqrt"
 RANDOM_FOREST_N_JOBS = -1
 
+ADABOOST_N_ESTIMATORS = 50
+ADABOOST_LEARNING_RATE = 0.05
+ADABOOST_BASE_MAX_DEPTH = 4
+ADABOOST_BASE_MIN_SAMPLES_SPLIT = 20
+ADABOOST_BASE_MIN_SAMPLES_LEAF = 10
+ADABOOST_LOSS = "linear"
+
 # =========================================================
 # 15. OPTIMIZATION PIPELINE SETTINGS
 # =========================================================
@@ -835,6 +842,63 @@ def validate_config() -> None:
         raise ValueError(
             "RANDOM_FOREST_N_JOBS must be "
             "-1 or a positive integer."
+        )
+
+    adaboost_positive_integer_settings = {
+        "ADABOOST_N_ESTIMATORS": (
+            ADABOOST_N_ESTIMATORS
+        ),
+        "ADABOOST_BASE_MAX_DEPTH": (
+            ADABOOST_BASE_MAX_DEPTH
+        ),
+        "ADABOOST_BASE_MIN_SAMPLES_SPLIT": (
+            ADABOOST_BASE_MIN_SAMPLES_SPLIT
+        ),
+        "ADABOOST_BASE_MIN_SAMPLES_LEAF": (
+            ADABOOST_BASE_MIN_SAMPLES_LEAF
+        ),
+    }
+
+    for setting_name, setting_value in (
+        adaboost_positive_integer_settings.items()
+    ):
+        if (
+            isinstance(setting_value, bool)
+            or not isinstance(setting_value, int)
+            or setting_value <= 0
+        ):
+            raise ValueError(
+                f"{setting_name} must be a "
+                "positive integer."
+            )
+
+    if ADABOOST_BASE_MIN_SAMPLES_SPLIT < 2:
+        raise ValueError(
+            "ADABOOST_BASE_MIN_SAMPLES_SPLIT "
+            "must be at least 2."
+        )
+
+    if (
+        isinstance(ADABOOST_LEARNING_RATE, bool)
+        or not isinstance(
+            ADABOOST_LEARNING_RATE,
+            (int, float),
+        )
+        or ADABOOST_LEARNING_RATE <= 0
+    ):
+        raise ValueError(
+            "ADABOOST_LEARNING_RATE must be "
+            "greater than zero."
+        )
+
+    if ADABOOST_LOSS not in (
+        "linear",
+        "square",
+        "exponential",
+    ):
+        raise ValueError(
+            "ADABOOST_LOSS must be 'linear', "
+            "'square', or 'exponential'."
         )
 
 if __name__ == "__main__":
