@@ -309,6 +309,11 @@ FORECAST_ROLLING_WINDOWS = (
     28,
 )
 
+MODEL_TRAIN_RATIO = 0.70
+MODEL_VALIDATION_RATIO = 0.15
+MODEL_TEST_RATIO = 0.15
+
+
 # =========================================================
 # 15. OPTIMIZATION PIPELINE SETTINGS
 # =========================================================
@@ -700,6 +705,40 @@ def validate_config() -> None:
             "FORECAST_ROLLING_WINDOWS must not "
             "contain duplicate values."
         )
+
+    model_split_ratios = (
+        MODEL_TRAIN_RATIO,
+        MODEL_VALIDATION_RATIO,
+        MODEL_TEST_RATIO,
+    )
+
+    invalid_model_split_ratios = [
+        ratio
+        for ratio in model_split_ratios
+        if (
+            isinstance(ratio, bool)
+            or not isinstance(
+                ratio,
+                (int, float),
+            )
+            or ratio <= 0
+            or ratio >= 1
+        )
+    ]
+
+    if invalid_model_split_ratios:
+        raise ValueError(
+            "Model split ratios must be numbers "
+            "between zero and one."
+        )
+
+    if abs(sum(model_split_ratios) - 1.0) > 1e-9:
+        raise ValueError(
+            "MODEL_TRAIN_RATIO, "
+            "MODEL_VALIDATION_RATIO, and "
+            "MODEL_TEST_RATIO must sum to 1.0."
+        )
+
 
 if __name__ == "__main__":
     validate_config()
