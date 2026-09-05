@@ -13,6 +13,7 @@ from src.dashboard.constants import (
     NETWORK_MAP_PAGE,
     OVERVIEW_PAGE,
     SAMPLE_DATA_SOURCE,
+    SAMPLE_MODEL_DATASET_ID,
     TRANSFER_PAGE,
     UPLOADED_DATA_SOURCE,
 )
@@ -202,6 +203,12 @@ def main() -> None:
 
     project_data, data_fingerprint = selected_data
 
+    model_dataset_fingerprint = (
+        SAMPLE_MODEL_DATASET_ID
+        if controls.data_source == SAMPLE_DATA_SOURCE
+        else data_fingerprint
+    )
+
     activate_project_data(
         project_data=project_data,
         data_source=controls.data_source,
@@ -226,6 +233,9 @@ def main() -> None:
         ),
         "dataset_fingerprint": (
             data_fingerprint
+        ),
+        "model_dataset_fingerprint": (
+            model_dataset_fingerprint
         ),
     }
 
@@ -273,7 +283,7 @@ def main() -> None:
                         .moving_average_window_days
                     ),
                     dataset_fingerprint=(
-                        data_fingerprint
+                        model_dataset_fingerprint
                     ),
                 )
 

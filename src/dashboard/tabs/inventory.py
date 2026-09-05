@@ -153,20 +153,54 @@ def render_inventory_tab(
                 placeholder="All cities",
             )
         )
+
+        available_store_data = inventory_data
+
+        if selected_cities:
+            available_store_data = (
+                available_store_data.loc[
+                    available_store_data["city"].isin(
+                        selected_cities
+                    )
+                ]
+            )
+
+        available_store_ids = sorted(
+            available_store_data[
+                "store_id"
+            ].unique()
+        )
+
+        current_store_selection = (
+            st.session_state.get(
+                "inventory_store_filter",
+                [],
+            )
+        )
+        valid_store_selection = [
+            store_id
+            for store_id in current_store_selection
+            if store_id in available_store_ids
+        ]
+
+        if (
+            current_store_selection
+            != valid_store_selection
+        ):
+            st.session_state[
+                "inventory_store_filter"
+            ] = valid_store_selection
+
         selected_stores = (
             filter_columns[2].multiselect(
                 "Store",
-                options=sorted(
-                    inventory_data[
-                        "store_id"
-                    ].unique()
-                ),
+                options=available_store_ids,
                 format_func=lambda store_id: (
                     f"{store_id} · "
                     f"{store_names.get(store_id, store_id)}"
                 ),
                 key="inventory_store_filter",
-                placeholder="All stores",
+                placeholder="All matching stores",
             )
         )
         selected_categories = (
@@ -181,20 +215,55 @@ def render_inventory_tab(
                 placeholder="All categories",
             )
         )
+
+        available_product_data = inventory_data
+
+        if selected_categories:
+            available_product_data = (
+                available_product_data.loc[
+                    available_product_data[
+                        "category"
+                    ].isin(selected_categories)
+                ]
+            )
+
+        available_product_ids = sorted(
+            available_product_data[
+                "product_id"
+            ].unique()
+        )
+
+        current_product_selection = (
+            st.session_state.get(
+                "inventory_product_filter",
+                [],
+            )
+        )
+        valid_product_selection = [
+            product_id
+            for product_id
+            in current_product_selection
+            if product_id in available_product_ids
+        ]
+
+        if (
+            current_product_selection
+            != valid_product_selection
+        ):
+            st.session_state[
+                "inventory_product_filter"
+            ] = valid_product_selection
+
         selected_products = (
             filter_columns[4].multiselect(
                 "Product",
-                options=sorted(
-                    inventory_data[
-                        "product_id"
-                    ].unique()
-                ),
+                options=available_product_ids,
                 format_func=lambda product_id: (
                     f"{product_id} · "
                     f"{product_names.get(product_id, product_id)}"
                 ),
                 key="inventory_product_filter",
-                placeholder="All products",
+                placeholder="All matching products",
             )
         )
 

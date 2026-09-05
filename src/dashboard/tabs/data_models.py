@@ -10,6 +10,8 @@ from src.dashboard.components import (
 from src.dashboard.constants import (
     DATA_SOURCE_DISPLAY_NAMES,
     MACHINE_LEARNING_DISPLAY_NAMES,
+    SAMPLE_DATA_SOURCE,
+    SAMPLE_MODEL_DATASET_ID,
 )
 from src.dashboard.formatters import (
     dataframe_to_csv_bytes,
@@ -586,6 +588,11 @@ def render_data_models_tab(
     dataset_fingerprint = (
         get_data_fingerprint()
     )
+    model_dataset_fingerprint = (
+        SAMPLE_MODEL_DATASET_ID
+        if data_source == SAMPLE_DATA_SOURCE
+        else dataset_fingerprint
+    )
     sales_dates = pd.to_datetime(
         project_data.sales["date"],
         errors="coerce",
@@ -613,6 +620,11 @@ def render_data_models_tab(
             (
                 "Compatibility Key",
                 fingerprint_label,
+            ),
+            (
+                "Model Artifact Scope",
+                model_dataset_fingerprint
+                or "Unavailable",
             ),
         ),
     )
@@ -666,7 +678,7 @@ def render_data_models_tab(
         render_model_training_section(
             project_data=project_data,
             dataset_fingerprint=(
-                dataset_fingerprint
+                model_dataset_fingerprint
             ),
         )
     )

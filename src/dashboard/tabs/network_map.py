@@ -103,24 +103,26 @@ def render_network_map_tab(
     available_cities = sorted(
         store_summary["city"].unique()
     )
-    available_statuses = [
-        status
-        for status in STATUS_DISPLAY_NAMES
-        if status in set(store_summary["map_status"])
-    ]
-    available_route_types = [
-        route_type
-        for route_type in ROUTE_DISPLAY_NAMES
-        if (
-            not transfer_data.empty
-            and route_type
-            in set(transfer_data["route_type"])
-        )
-    ]
     filter_state = (
         "result"
         if result is not None
         else "preview"
+    )
+    status_filter_key = (
+        "map_store_status_"
+        f"{filter_state}_filter"
+    )
+    route_filter_key = (
+        "map_route_type_"
+        f"{filter_state}_filter"
+    )
+    source_filter_key = (
+        "map_source_city_"
+        f"{filter_state}_filter"
+    )
+    destination_filter_key = (
+        "map_destination_city_"
+        f"{filter_state}_filter"
     )
 
     render_section_heading(
@@ -134,6 +136,33 @@ def render_network_map_tab(
     with st.container(border=True):
         filter_columns = st.columns(5)
 
+        current_city_selection = (
+            st.session_state.get(
+                "map_store_city_filter"
+            )
+        )
+
+        if current_city_selection is not None:
+            valid_city_selection = [
+                city
+                for city in current_city_selection
+                if city in available_cities
+            ]
+
+            if (
+                current_city_selection
+                and not valid_city_selection
+            ):
+                valid_city_selection = available_cities
+
+            if (
+                current_city_selection
+                != valid_city_selection
+            ):
+                st.session_state[
+                    "map_store_city_filter"
+                ] = valid_city_selection
+
         selected_store_cities = (
             filter_columns[0].multiselect(
                 "Store City",
@@ -142,6 +171,49 @@ def render_network_map_tab(
                 key="map_store_city_filter",
             )
         )
+
+        city_store_summary = store_summary.loc[
+            store_summary["city"].isin(
+                selected_store_cities
+            )
+        ]
+        available_statuses = [
+            status
+            for status in STATUS_DISPLAY_NAMES
+            if status
+            in set(city_store_summary["map_status"])
+        ]
+
+        current_status_selection = (
+            st.session_state.get(
+                status_filter_key
+            )
+        )
+
+        if current_status_selection is not None:
+            valid_status_selection = [
+                status
+                for status
+                in current_status_selection
+                if status in available_statuses
+            ]
+
+            if (
+                current_status_selection
+                and not valid_status_selection
+            ):
+                valid_status_selection = (
+                    available_statuses
+                )
+
+            if (
+                current_status_selection
+                != valid_status_selection
+            ):
+                st.session_state[
+                    status_filter_key
+                ] = valid_status_selection
+
         selected_statuses = (
             filter_columns[1].multiselect(
                 "Store Status",
@@ -153,12 +225,71 @@ def render_network_map_tab(
                         status.title(),
                     )
                 ),
-                key=(
-                    "map_store_status_"
-                    f"{filter_state}_filter"
-                ),
+                key=status_filter_key,
             )
         )
+
+        visible_summary = city_store_summary.loc[
+            city_store_summary["map_status"].isin(
+                selected_statuses
+            )
+        ].copy()
+        visible_store_ids = set(
+            visible_summary["store_id"]
+        )
+
+        if transfer_data.empty:
+            candidate_routes = transfer_data.copy()
+        else:
+            candidate_routes = transfer_data.loc[
+                transfer_data["from_store_id"].isin(
+                    visible_store_ids
+                )
+                & transfer_data["to_store_id"].isin(
+                    visible_store_ids
+                )
+            ].copy()
+
+        available_route_types = [
+            route_type
+            for route_type in ROUTE_DISPLAY_NAMES
+            if (
+                not candidate_routes.empty
+                and route_type
+                in set(candidate_routes["route_type"])
+            )
+        ]
+
+        current_route_selection = (
+            st.session_state.get(
+                route_filter_key
+            )
+        )
+
+        if current_route_selection is not None:
+            valid_route_selection = [
+                route_type
+                for route_type
+                in current_route_selection
+                if route_type in available_route_types
+            ]
+
+            if (
+                current_route_selection
+                and not valid_route_selection
+            ):
+                valid_route_selection = (
+                    available_route_types
+                )
+
+            if (
+                current_route_selection
+                != valid_route_selection
+            ):
+                st.session_state[
+                    route_filter_key
+                ] = valid_route_selection
+
         selected_route_types = (
             filter_columns[2].multiselect(
                 "Route Type",
@@ -173,62 +304,113 @@ def render_network_map_tab(
                         ).title(),
                     )
                 ),
-                key=(
-                    "map_route_type_"
-                    f"{filter_state}_filter"
-                ),
-                disabled=transfer_data.empty,
-            )
-        )
-        selected_source_cities = (
-            filter_columns[3].multiselect(
-                "Source City",
-                options=(
-                    sorted(
-                        transfer_data[
-                            "from_city"
-                        ].unique()
-                    )
-                    if not transfer_data.empty
-                    else []
-                ),
-                key=(
-                    "map_source_city_"
-                    f"{filter_state}_filter"
-                ),
-                placeholder="All cities",
-                disabled=transfer_data.empty,
-            )
-        )
-        selected_destination_cities = (
-            filter_columns[4].multiselect(
-                "Destination City",
-                options=(
-                    sorted(
-                        transfer_data[
-                            "to_city"
-                        ].unique()
-                    )
-                    if not transfer_data.empty
-                    else []
-                ),
-                key=(
-                    "map_destination_city_"
-                    f"{filter_state}_filter"
-                ),
-                placeholder="All cities",
+                key=route_filter_key,
                 disabled=transfer_data.empty,
             )
         )
 
-    visible_summary = store_summary.loc[
-        store_summary["city"].isin(
-            selected_store_cities
+        route_filtered_data = candidate_routes
+
+        if not route_filtered_data.empty:
+            route_filtered_data = (
+                route_filtered_data.loc[
+                    route_filtered_data[
+                        "route_type"
+                    ].isin(selected_route_types)
+                ]
+            )
+
+        available_source_cities = (
+            sorted(
+                route_filtered_data[
+                    "from_city"
+                ].unique()
+            )
+            if not route_filtered_data.empty
+            else []
         )
-        & store_summary["map_status"].isin(
-            selected_statuses
+
+        current_source_selection = (
+            st.session_state.get(
+                source_filter_key,
+                [],
+            )
         )
-    ].copy()
+        valid_source_selection = [
+            city
+            for city in current_source_selection
+            if city in available_source_cities
+        ]
+
+        if (
+            current_source_selection
+            != valid_source_selection
+        ):
+            st.session_state[
+                source_filter_key
+            ] = valid_source_selection
+
+        selected_source_cities = (
+            filter_columns[3].multiselect(
+                "Source City",
+                options=available_source_cities,
+                key=source_filter_key,
+                placeholder="All matching cities",
+                disabled=transfer_data.empty,
+            )
+        )
+
+        source_filtered_data = route_filtered_data
+
+        if selected_source_cities:
+            source_filtered_data = (
+                source_filtered_data.loc[
+                    source_filtered_data[
+                        "from_city"
+                    ].isin(selected_source_cities)
+                ]
+            )
+
+        available_destination_cities = (
+            sorted(
+                source_filtered_data[
+                    "to_city"
+                ].unique()
+            )
+            if not source_filtered_data.empty
+            else []
+        )
+
+        current_destination_selection = (
+            st.session_state.get(
+                destination_filter_key,
+                [],
+            )
+        )
+        valid_destination_selection = [
+            city
+            for city
+            in current_destination_selection
+            if city in available_destination_cities
+        ]
+
+        if (
+            current_destination_selection
+            != valid_destination_selection
+        ):
+            st.session_state[
+                destination_filter_key
+            ] = valid_destination_selection
+
+        selected_destination_cities = (
+            filter_columns[4].multiselect(
+                "Destination City",
+                options=available_destination_cities,
+                key=destination_filter_key,
+                placeholder="All matching cities",
+                disabled=transfer_data.empty,
+            )
+        )
 
     if visible_summary.empty:
         st.warning(
@@ -236,9 +418,6 @@ def render_network_map_tab(
         )
         return
 
-    visible_store_ids = set(
-        visible_summary["store_id"]
-    )
     visible_stores = project_data.stores.loc[
         project_data.stores["store_id"].isin(
             visible_store_ids

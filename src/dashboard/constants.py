@@ -45,6 +45,7 @@ APP_LAYOUT = "wide"
 
 SAMPLE_DATA_SOURCE = "sample"
 UPLOADED_DATA_SOURCE = "uploaded"
+SAMPLE_MODEL_DATASET_ID = "sample-dataset"
 
 DATA_SOURCE_DISPLAY_NAMES = {
     SAMPLE_DATA_SOURCE: "Sample Dataset",
