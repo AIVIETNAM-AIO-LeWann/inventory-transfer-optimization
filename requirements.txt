@@ -22,5 +22,9 @@ tqdm
 # Genetic Algorithm
 deap==1.4.4
 
+# Machine Learning
+scikit-learn>=1.5,<2.0
+joblib>=1.4,<2.0
+
 # Testing
 pytest

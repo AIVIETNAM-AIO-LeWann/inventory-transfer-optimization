@@ -92,3 +92,6 @@ visualizations/
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Locally trained machine-learning artifacts
+models/

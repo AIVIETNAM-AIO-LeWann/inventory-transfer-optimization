@@ -72,6 +72,18 @@ GENETIC_ALGORITHM_TRANSFER_PLAN_FILE = (
     RESULTS_DIR / "genetic_algorithm_transfer_plan.csv"
 )
 
+DAILY_DEMAND_FORECAST_FILE = (
+    RESULTS_DIR / "daily_demand_forecast.csv"
+)
+
+FORECAST_BACKTEST_RESULTS_FILE = (
+    RESULTS_DIR / "forecast_backtest_results.csv"
+)
+
+FORECAST_BACKTEST_SUMMARY_FILE = (
+    RESULTS_DIR / "forecast_backtest_summary.csv"
+)
+
 # =========================================================
 # 4. RANDOM SEED
 # =========================================================
@@ -136,7 +148,7 @@ MAX_PROFIT_MARGIN = 0.50
 # =========================================================
 
 SALES_START_DATE = "2026-01-01"
-SALES_DAYS = 90
+SALES_DAYS = 365
 
 # Average daily demand range for generated sales data
 MIN_DAILY_DEMAND = 1
@@ -238,9 +250,106 @@ GA_CROSSOVER_PROBABILITY = 0.70
 GA_MUTATION_PROBABILITY = 0.10
 GA_TOURNAMENT_SIZE = 3
 
+# =========================================================
+# 14. DEMAND FORECASTING SETTINGS
+# =========================================================
+
+FORECAST_BACKTEST_FOLDS = 5
+BACKTEST_MIN_TRAINING_DAYS = 90
+
+HISTORICAL_AVERAGE_METHOD = "historical_average"
+MOVING_AVERAGE_METHOD = "moving_average"
+
+SUPPORTED_FORECAST_METHODS = (
+    HISTORICAL_AVERAGE_METHOD,
+    MOVING_AVERAGE_METHOD,
+)
+
+DEFAULT_FORECAST_METHOD = (
+    HISTORICAL_AVERAGE_METHOD
+)
+
+MIN_FORECAST_HORIZON_DAYS = 1
+MAX_FORECAST_HORIZON_DAYS = 14
+
+DEFAULT_FORECAST_HORIZON_DAYS = 7
+
+SHORT_TERM_REPLENISHMENT_DAYS = (
+    MIN_INVENTORY_DAYS
+)
+
+LONG_TERM_REPLENISHMENT_DAYS = (
+    TARGET_INVENTORY_DAYS
+)
+
+FORECAST_HORIZON_PRESETS = (
+    1,
+    5,
+    7,
+    14,
+)
+
+MOVING_AVERAGE_WINDOW_DAYS = 7
+
+FORECAST_EVALUATION_HORIZONS = (
+    1,
+    7,
+    14,
+)
+
+FORECAST_LAG_DAYS = (
+    1,
+    7,
+    14,
+)
+
+FORECAST_ROLLING_WINDOWS = (
+    7,
+    14,
+    28,
+)
+
+MODEL_TRAIN_RATIO = 0.70
+MODEL_VALIDATION_RATIO = 0.15
+MODEL_TEST_RATIO = 0.15
+
+
+DECISION_TREE_MAX_DEPTH = 12
+DECISION_TREE_MIN_SAMPLES_SPLIT = 20
+DECISION_TREE_MIN_SAMPLES_LEAF = 10
+
+RANDOM_FOREST_N_ESTIMATORS = 100
+RANDOM_FOREST_MAX_DEPTH = 12
+RANDOM_FOREST_MIN_SAMPLES_SPLIT = 20
+RANDOM_FOREST_MIN_SAMPLES_LEAF = 10
+RANDOM_FOREST_MAX_FEATURES = "sqrt"
+RANDOM_FOREST_N_JOBS = -1
+
+ADABOOST_N_ESTIMATORS = 50
+ADABOOST_LEARNING_RATE = 0.05
+ADABOOST_BASE_MAX_DEPTH = 4
+ADABOOST_BASE_MIN_SAMPLES_SPLIT = 20
+ADABOOST_BASE_MIN_SAMPLES_LEAF = 10
+ADABOOST_LOSS = "linear"
 
 # =========================================================
-# 14. HELPER FUNCTIONS
+# 15. OPTIMIZATION PIPELINE SETTINGS
+# =========================================================
+
+GREEDY_OPTIMIZER = "greedy"
+LINEAR_PROGRAMMING_OPTIMIZER = "linear_programming"
+GENETIC_ALGORITHM_OPTIMIZER = "genetic_algorithm"
+
+SUPPORTED_OPTIMIZERS = (
+    GREEDY_OPTIMIZER,
+    LINEAR_PROGRAMMING_OPTIMIZER,
+    GENETIC_ALGORITHM_OPTIMIZER,
+)
+
+DEFAULT_OPTIMIZER = GREEDY_OPTIMIZER
+
+# =========================================================
+# 16. HELPER FUNCTIONS
 # =========================================================
 
 def ensure_project_directories() -> dict[str, Path]:
@@ -413,6 +522,384 @@ def validate_config() -> None:
             "than the maximum inter-city lead time."
         )
 
+    if not SUPPORTED_FORECAST_METHODS:
+        raise ValueError(
+            "SUPPORTED_FORECAST_METHODS "
+            "must not be empty."
+        )
+
+    if (
+        DEFAULT_FORECAST_METHOD
+        not in SUPPORTED_FORECAST_METHODS
+    ):
+        raise ValueError(
+            "DEFAULT_FORECAST_METHOD must exist in "
+            "SUPPORTED_FORECAST_METHODS."
+        )
+
+    if MIN_FORECAST_HORIZON_DAYS <= 0:
+        raise ValueError(
+            "MIN_FORECAST_HORIZON_DAYS "
+            "must be greater than zero."
+        )
+
+    if (
+        MAX_FORECAST_HORIZON_DAYS
+        < MIN_FORECAST_HORIZON_DAYS
+    ):
+        raise ValueError(
+            "MAX_FORECAST_HORIZON_DAYS must be "
+            "greater than or equal to "
+            "MIN_FORECAST_HORIZON_DAYS."
+        )
+
+    if not (
+        MIN_FORECAST_HORIZON_DAYS
+        <= DEFAULT_FORECAST_HORIZON_DAYS
+        <= MAX_FORECAST_HORIZON_DAYS
+    ):
+        raise ValueError(
+            "DEFAULT_FORECAST_HORIZON_DAYS must be "
+            "within the allowed forecast range."
+        )
+
+    if not (
+        MIN_FORECAST_HORIZON_DAYS
+        <= SHORT_TERM_REPLENISHMENT_DAYS
+        < LONG_TERM_REPLENISHMENT_DAYS
+        == MAX_FORECAST_HORIZON_DAYS
+    ):
+        raise ValueError(
+            "Replenishment horizons must satisfy: "
+            "minimum forecast horizon <= short-term "
+            "horizon < long-term horizon == maximum "
+            "forecast horizon."
+        )
+
+    if not FORECAST_HORIZON_PRESETS:
+        raise ValueError(
+            "FORECAST_HORIZON_PRESETS "
+            "must not be empty."
+        )
+
+    invalid_presets = [
+        horizon
+        for horizon in FORECAST_HORIZON_PRESETS
+        if not (
+            MIN_FORECAST_HORIZON_DAYS
+            <= horizon
+            <= MAX_FORECAST_HORIZON_DAYS
+        )
+    ]
+
+    if invalid_presets:
+        raise ValueError(
+            "Forecast horizon presets are outside "
+            f"the allowed range: {invalid_presets}"
+        )
+
+    if MOVING_AVERAGE_WINDOW_DAYS <= 0:
+        raise ValueError(
+            "MOVING_AVERAGE_WINDOW_DAYS "
+            "must be greater than zero."
+        )
+
+    if not SUPPORTED_OPTIMIZERS:
+        raise ValueError(
+        "SUPPORTED_OPTIMIZERS must not be empty."
+        )
+
+    if DEFAULT_OPTIMIZER not in SUPPORTED_OPTIMIZERS:
+        raise ValueError(
+            "DEFAULT_OPTIMIZER must exist in "
+            "SUPPORTED_OPTIMIZERS."
+        )
+
+    if not FORECAST_EVALUATION_HORIZONS:
+        raise ValueError(
+            "FORECAST_EVALUATION_HORIZONS "
+            "must not be empty."
+        )
+
+    invalid_evaluation_horizons = [
+        horizon
+        for horizon in FORECAST_EVALUATION_HORIZONS
+        if not (
+            MIN_FORECAST_HORIZON_DAYS
+            <= horizon
+            <= MAX_FORECAST_HORIZON_DAYS
+        )
+    ]
+
+    if invalid_evaluation_horizons:
+        raise ValueError(
+            "Forecast evaluation horizons are "
+            "outside the allowed range: "
+            f"{invalid_evaluation_horizons}"
+        )
+    if (
+    not isinstance(FORECAST_BACKTEST_FOLDS, int)
+    or FORECAST_BACKTEST_FOLDS <= 0
+    ):
+        raise ValueError(
+            "FORECAST_BACKTEST_FOLDS must be "
+            "a positive integer."
+        )
+
+    if (
+        not isinstance(BACKTEST_MIN_TRAINING_DAYS, int)
+        or BACKTEST_MIN_TRAINING_DAYS <= 0
+    ):
+        raise ValueError(
+            "BACKTEST_MIN_TRAINING_DAYS must be "
+            "a positive integer."
+        )
+
+    if (
+        BACKTEST_MIN_TRAINING_DAYS
+        < MOVING_AVERAGE_WINDOW_DAYS
+    ):
+        raise ValueError(
+            "BACKTEST_MIN_TRAINING_DAYS must be "
+            "greater than or equal to "
+            "MOVING_AVERAGE_WINDOW_DAYS."
+        )
+    if not FORECAST_LAG_DAYS:
+        raise ValueError(
+            "FORECAST_LAG_DAYS must not be empty."
+        )
+
+    invalid_lag_days = [
+        lag_day
+        for lag_day in FORECAST_LAG_DAYS
+        if (
+            not isinstance(lag_day, int)
+            or lag_day <= 0
+        )
+    ]
+
+    if invalid_lag_days:
+        raise ValueError(
+            "Forecast lag days must be positive "
+            f"integers: {invalid_lag_days}"
+        )
+
+    if (
+        len(set(FORECAST_LAG_DAYS))
+        != len(FORECAST_LAG_DAYS)
+    ):
+        raise ValueError(
+            "FORECAST_LAG_DAYS must not contain "
+            "duplicate values."
+        )
+
+    if not FORECAST_ROLLING_WINDOWS:
+        raise ValueError(
+            "FORECAST_ROLLING_WINDOWS "
+            "must not be empty."
+        )
+
+    invalid_rolling_windows = [
+        window
+        for window in FORECAST_ROLLING_WINDOWS
+        if (
+            not isinstance(window, int)
+            or window <= 0
+        )
+    ]
+
+    if invalid_rolling_windows:
+        raise ValueError(
+            "Forecast rolling windows must be "
+            "positive integers: "
+            f"{invalid_rolling_windows}"
+        )
+
+    if (
+        len(set(FORECAST_ROLLING_WINDOWS))
+        != len(FORECAST_ROLLING_WINDOWS)
+    ):
+        raise ValueError(
+            "FORECAST_ROLLING_WINDOWS must not "
+            "contain duplicate values."
+        )
+
+    model_split_ratios = (
+        MODEL_TRAIN_RATIO,
+        MODEL_VALIDATION_RATIO,
+        MODEL_TEST_RATIO,
+    )
+
+    invalid_model_split_ratios = [
+        ratio
+        for ratio in model_split_ratios
+        if (
+            isinstance(ratio, bool)
+            or not isinstance(
+                ratio,
+                (int, float),
+            )
+            or ratio <= 0
+            or ratio >= 1
+        )
+    ]
+
+    if invalid_model_split_ratios:
+        raise ValueError(
+            "Model split ratios must be numbers "
+            "between zero and one."
+        )
+
+    if abs(sum(model_split_ratios) - 1.0) > 1e-9:
+        raise ValueError(
+            "MODEL_TRAIN_RATIO, "
+            "MODEL_VALIDATION_RATIO, and "
+            "MODEL_TEST_RATIO must sum to 1.0."
+        )
+
+    decision_tree_integer_settings = {
+        "DECISION_TREE_MAX_DEPTH": (
+            DECISION_TREE_MAX_DEPTH
+        ),
+        "DECISION_TREE_MIN_SAMPLES_SPLIT": (
+            DECISION_TREE_MIN_SAMPLES_SPLIT
+        ),
+        "DECISION_TREE_MIN_SAMPLES_LEAF": (
+            DECISION_TREE_MIN_SAMPLES_LEAF
+        ),
+    }
+
+    for setting_name, setting_value in (
+        decision_tree_integer_settings.items()
+    ):
+        if (
+            isinstance(setting_value, bool)
+            or not isinstance(setting_value, int)
+            or setting_value <= 0
+        ):
+            raise ValueError(
+                f"{setting_name} must be a "
+                "positive integer."
+            )
+
+    if DECISION_TREE_MIN_SAMPLES_SPLIT < 2:
+        raise ValueError(
+            "DECISION_TREE_MIN_SAMPLES_SPLIT "
+            "must be at least 2."
+        )
+
+    random_forest_positive_settings = {
+        "RANDOM_FOREST_N_ESTIMATORS": (
+            RANDOM_FOREST_N_ESTIMATORS
+        ),
+        "RANDOM_FOREST_MAX_DEPTH": (
+            RANDOM_FOREST_MAX_DEPTH
+        ),
+        "RANDOM_FOREST_MIN_SAMPLES_SPLIT": (
+            RANDOM_FOREST_MIN_SAMPLES_SPLIT
+        ),
+        "RANDOM_FOREST_MIN_SAMPLES_LEAF": (
+            RANDOM_FOREST_MIN_SAMPLES_LEAF
+        ),
+    }
+
+    for setting_name, setting_value in (
+        random_forest_positive_settings.items()
+    ):
+        if (
+            isinstance(setting_value, bool)
+            or not isinstance(setting_value, int)
+            or setting_value <= 0
+        ):
+            raise ValueError(
+                f"{setting_name} must be a "
+                "positive integer."
+            )
+
+    if RANDOM_FOREST_MIN_SAMPLES_SPLIT < 2:
+        raise ValueError(
+            "RANDOM_FOREST_MIN_SAMPLES_SPLIT "
+            "must be at least 2."
+        )
+
+    if RANDOM_FOREST_MAX_FEATURES not in (
+        "sqrt",
+        "log2",
+    ):
+        raise ValueError(
+            "RANDOM_FOREST_MAX_FEATURES must be "
+            "'sqrt' or 'log2'."
+        )
+
+    if (
+        isinstance(RANDOM_FOREST_N_JOBS, bool)
+        or not isinstance(
+            RANDOM_FOREST_N_JOBS,
+            int,
+        )
+        or RANDOM_FOREST_N_JOBS == 0
+    ):
+        raise ValueError(
+            "RANDOM_FOREST_N_JOBS must be "
+            "-1 or a positive integer."
+        )
+
+    adaboost_positive_integer_settings = {
+        "ADABOOST_N_ESTIMATORS": (
+            ADABOOST_N_ESTIMATORS
+        ),
+        "ADABOOST_BASE_MAX_DEPTH": (
+            ADABOOST_BASE_MAX_DEPTH
+        ),
+        "ADABOOST_BASE_MIN_SAMPLES_SPLIT": (
+            ADABOOST_BASE_MIN_SAMPLES_SPLIT
+        ),
+        "ADABOOST_BASE_MIN_SAMPLES_LEAF": (
+            ADABOOST_BASE_MIN_SAMPLES_LEAF
+        ),
+    }
+
+    for setting_name, setting_value in (
+        adaboost_positive_integer_settings.items()
+    ):
+        if (
+            isinstance(setting_value, bool)
+            or not isinstance(setting_value, int)
+            or setting_value <= 0
+        ):
+            raise ValueError(
+                f"{setting_name} must be a "
+                "positive integer."
+            )
+
+    if ADABOOST_BASE_MIN_SAMPLES_SPLIT < 2:
+        raise ValueError(
+            "ADABOOST_BASE_MIN_SAMPLES_SPLIT "
+            "must be at least 2."
+        )
+
+    if (
+        isinstance(ADABOOST_LEARNING_RATE, bool)
+        or not isinstance(
+            ADABOOST_LEARNING_RATE,
+            (int, float),
+        )
+        or ADABOOST_LEARNING_RATE <= 0
+    ):
+        raise ValueError(
+            "ADABOOST_LEARNING_RATE must be "
+            "greater than zero."
+        )
+
+    if ADABOOST_LOSS not in (
+        "linear",
+        "square",
+        "exponential",
+    ):
+        raise ValueError(
+            "ADABOOST_LOSS must be 'linear', "
+            "'square', or 'exponential'."
+        )
 
 if __name__ == "__main__":
     validate_config()
