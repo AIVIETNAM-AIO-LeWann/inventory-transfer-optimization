@@ -118,6 +118,10 @@ Streamlit normally opens the application at `http://localhost:8501`.
 Model artifacts are associated with a fingerprint of the active dataset. A
 model trained for a different dataset is not used accidentally.
 
+The repository includes a reviewed pretrained AdaBoost artifact for the
+bundled sample dataset. It can therefore be selected and run immediately.
+Uploaded or modified datasets still require their own compatible training.
+
 ## ZIP dataset format
 
 An uploaded ZIP must contain these seven CSV files at its root:
@@ -166,7 +170,7 @@ inventory-transfer-optimization/
 |   |-- images/
 |   `-- styles.css
 |-- data/
-|-- models/
+|-- models/                   # Reviewed pretrained and local model artifacts
 |-- results/
 |-- src/
 |   |-- config.py
@@ -184,6 +188,24 @@ inventory-transfer-optimization/
 |   `-- metrics.py
 `-- tests/
 ```
+
+### Component responsibilities
+
+| Component | Responsibility |
+| --- | --- |
+| `app.py` | Starts the Streamlit application and coordinates the dashboard workflow. |
+| `src/config.py` | Stores file paths, inventory policies, forecast settings, and optimizer settings. |
+| `src/data_generator/` | Generates stores, products, sales, inventory, and route matrices. |
+| `src/data_ingestion/` | Reads uploaded ZIP files and validates the seven required CSV files. |
+| `src/dashboard/` | Provides UI components, charts, state management, model training, and dashboard pages. |
+| `src/forecasting/` | Creates time-series features and forecasts demand with statistical and ML methods. |
+| `src/inventory_analyzer.py` | Classifies store-product inventory as shortage, balanced, or excess. |
+| `src/route_analyzer.py` | Combines distance, duration, and transport cost for possible routes. |
+| `src/optimizers/` | Builds plans with Greedy, Linear Programming, or Genetic Algorithm methods. |
+| `src/optimization_pipeline.py` | Connects forecasting, inventory analysis, routing, optimization, and evaluation. |
+| `src/metrics.py` | Calculates shortage recovery, transfer volume, cost, and other KPIs. |
+| `models/` | Stores the reviewed sample artifact and locally trained dataset-specific artifacts. |
+| `tests/` | Verifies forecasting, optimization, ingestion, and supporting business logic. |
 
 ## Run checks
 
