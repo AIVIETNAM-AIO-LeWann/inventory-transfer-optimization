@@ -65,6 +65,46 @@ STORE_LOCATIONS = {
 }
 
 
+STORE_COORDINATES = {
+    "Hanoi": {
+        "Ba Dinh": (21.0358, 105.8347),
+        "Hoan Kiem": (21.0285, 105.8542),
+        "Tay Ho": (21.0687, 105.8230),
+        "Long Bien": (21.0542, 105.8914),
+        "Cau Giay": (21.0362, 105.7906),
+        "Dong Da": (21.0180, 105.8290),
+        "Hai Ba Trung": (21.0091, 105.8490),
+        "Hoang Mai": (20.9743, 105.8522),
+        "Thanh Xuan": (20.9938, 105.8115),
+        "My Dinh": (21.0285, 105.7731),
+    },
+    "Da Nang": {
+        "Hai Chau": (16.0471, 108.2068),
+        "Thanh Khe": (16.0636, 108.1847),
+        "Son Tra": (16.0810, 108.2370),
+        "Ngu Hanh Son": (16.0032, 108.2450),
+        "Lien Chieu": (16.0757, 108.1505),
+        "Cam Le": (16.0150, 108.2000),
+        "Hoa Vang": (16.0500, 108.1200),
+    },
+    "Ho Chi Minh City": {
+        "District 1": (10.7756, 106.7009),
+        "District 2": (10.7873, 106.7498),
+        "District 3": (10.7844, 106.6844),
+        "District 6": (10.7462, 106.6352),
+        "District 7": (10.7340, 106.7216),
+        "Thu Duc": (10.8494, 106.7537),
+        "Binh Thanh": (10.8106, 106.7091),
+        "Phu Nhuan": (10.7992, 106.6802),
+        "Tan Binh": (10.8015, 106.6526),
+        "Go Vap": (10.8387, 106.6653),
+        "Binh Tan": (10.7653, 106.6038),
+        "Tan Phu": (10.7901, 106.6284),
+        "Nha Be": (10.6953, 106.7042),
+    },
+}
+
+
 STORE_COLUMNS = (
     "store_id",
     "store_name",
@@ -77,100 +117,208 @@ STORE_COLUMNS = (
 def validate_store_generation_settings() -> None:
     """Validate settings required by the store generator."""
 
-    missing_cities = set(STORE_CITIES) - set(STORE_LOCATIONS)
+    missing_location_cities = (
+        set(STORE_CITIES)
+        - set(STORE_LOCATIONS)
+    )
 
-    if missing_cities:
+    if missing_location_cities:
         raise ValueError(
             "Missing location names for cities: "
-            f"{sorted(missing_cities)}"
+            f"{sorted(missing_location_cities)}"
         )
 
-    for city, city_config in STORE_CITIES.items():
+    missing_coordinate_cities = (
+        set(STORE_CITIES)
+        - set(STORE_COORDINATES)
+    )
+
+    if missing_coordinate_cities:
+        raise ValueError(
+            "Missing coordinates for cities: "
+            f"{sorted(missing_coordinate_cities)}"
+        )
+
+    for city, city_config in (
+        STORE_CITIES.items()
+    ):
         store_count = city_config["count"]
-        latitude_range = city_config["lat_range"]
-        longitude_range = city_config["lon_range"]
+        available_locations = (
+            STORE_LOCATIONS[city]
+        )
+        available_coordinates = (
+            STORE_COORDINATES[city]
+        )
 
         if store_count <= 0:
             raise ValueError(
-                f"Store count for {city} must be greater than zero."
+                f"Store count for {city} must "
+                "be greater than zero."
             )
 
-        if latitude_range[0] >= latitude_range[1]:
+        if store_count > len(
+            available_locations
+        ):
             raise ValueError(
-                f"Invalid latitude range for {city}."
+                f"{city} requires {store_count} "
+                "unique locations, but only "
+                f"{len(available_locations)} "
+                "are available."
             )
 
-        if longitude_range[0] >= longitude_range[1]:
+        missing_locations = (
+            set(available_locations)
+            - set(available_coordinates)
+        )
+
+        if missing_locations:
             raise ValueError(
-                f"Invalid longitude range for {city}."
+                f"Missing coordinates for "
+                f"{city}: "
+                f"{sorted(missing_locations)}"
             )
 
-        if store_count > len(STORE_LOCATIONS[city]):
+        extra_locations = (
+            set(available_coordinates)
+            - set(available_locations)
+        )
+
+        if extra_locations:
             raise ValueError(
-                f"{city} requires {store_count} unique locations, "
-                f"but only {len(STORE_LOCATIONS[city])} are available."
+                f"Coordinates contain unknown "
+                f"locations for {city}: "
+                f"{sorted(extra_locations)}"
             )
+
+        for location in (
+            available_locations
+        ):
+            latitude, longitude = (
+                available_coordinates[
+                    location
+                ]
+            )
+
+            if (
+                isinstance(latitude, bool)
+                or not isinstance(
+                    latitude,
+                    (int, float),
+                )
+            ):
+                raise TypeError(
+                    f"Latitude for {city} - "
+                    f"{location} must be numeric."
+                )
+
+            if (
+                isinstance(longitude, bool)
+                or not isinstance(
+                    longitude,
+                    (int, float),
+                )
+            ):
+                raise TypeError(
+                    f"Longitude for {city} - "
+                    f"{location} must be numeric."
+                )
+
+            if not np.isfinite(latitude):
+                raise ValueError(
+                    f"Latitude for {city} - "
+                    f"{location} must be finite."
+                )
+
+            if not np.isfinite(longitude):
+                raise ValueError(
+                    f"Longitude for {city} - "
+                    f"{location} must be finite."
+                )
+
+            if not -90 <= latitude <= 90:
+                raise ValueError(
+                    f"Invalid latitude for "
+                    f"{city} - {location}."
+                )
+
+            if not -180 <= longitude <= 180:
+                raise ValueError(
+                    f"Invalid longitude for "
+                    f"{city} - {location}."
+                )
 
 
 def generate_stores(
     seed: int = RANDOM_SEED,
 ) -> pd.DataFrame:
-    """
-    Generate sample stores using configured cities and coordinate ranges.
-
-    Args:
-        seed:
-            Random seed used to produce reproducible store data.
-
-    Returns:
-        A DataFrame containing generated store information.
-    """
+    """Generate stores using fixed location coordinates."""
 
     validate_config()
     validate_store_generation_settings()
 
-    # A local random generator avoids changing global random state.
     rng = np.random.default_rng(seed)
 
-    store_records: list[dict[str, object]] = []
+    store_records: list[
+        dict[str, object]
+    ] = []
+
     store_number = 1
 
-    for city, city_config in STORE_CITIES.items():
+    for city, city_config in (
+        STORE_CITIES.items()
+    ):
         store_count = city_config["count"]
-        latitude_min, latitude_max = city_config["lat_range"]
-        longitude_min, longitude_max = city_config["lon_range"]
 
-        available_locations = STORE_LOCATIONS[city]
-
-        # Select different locations within the same city.
-        selected_location_indexes = rng.choice(
-            len(available_locations),
-            size=store_count,
-            replace=False,
+        available_locations = (
+            STORE_LOCATIONS[city]
         )
 
-        for location_index in selected_location_indexes:
-            store_id = f"S{store_number:03d}"
-            brand = str(rng.choice(STORE_BRANDS))
-            location = available_locations[int(location_index)]
+        selected_location_indexes = (
+            rng.choice(
+                len(available_locations),
+                size=store_count,
+                replace=False,
+            )
+        )
 
-            latitude = rng.uniform(
-                latitude_min,
-                latitude_max,
+        for location_index in (
+            selected_location_indexes
+        ):
+            store_id = (
+                f"S{store_number:03d}"
             )
 
-            longitude = rng.uniform(
-                longitude_min,
-                longitude_max,
+            brand = str(
+                rng.choice(STORE_BRANDS)
+            )
+
+            location = (
+                available_locations[
+                    int(location_index)
+                ]
+            )
+
+            latitude, longitude = (
+                STORE_COORDINATES[
+                    city
+                ][location]
             )
 
             store_records.append(
                 {
                     "store_id": store_id,
-                    "store_name": f"{brand} - {location}",
+                    "store_name": (
+                        f"{brand} - {location}"
+                    ),
                     "city": city,
-                    "latitude": round(float(latitude), 6),
-                    "longitude": round(float(longitude), 6),
+                    "latitude": round(
+                        float(latitude),
+                        6,
+                    ),
+                    "longitude": round(
+                        float(longitude),
+                        6,
+                    ),
                 }
             )
 
@@ -181,10 +329,11 @@ def generate_stores(
         columns=STORE_COLUMNS,
     )
 
-    validate_generated_stores(stores)
+    validate_generated_stores(
+        stores
+    )
 
     return stores
-
 
 def validate_generated_stores(stores: pd.DataFrame) -> None:
     """Validate a generated store DataFrame."""
