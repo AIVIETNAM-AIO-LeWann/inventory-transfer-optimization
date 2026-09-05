@@ -1,11 +1,22 @@
-# Inventory Transfer Optimization
+<h1 align="center">📦 Inventory Transfer Optimization</h1>
 
-A Streamlit application that forecasts retail demand, identifies inventory
-imbalances, and recommends cost-aware product transfers between stores.
+<p align="center">
+  Forecast retail demand, detect inventory imbalances, and create
+  cost-aware transfer plans between stores.
+</p>
 
-![Inventory network illustration](assets/images/dashboard_hero.png)
+<p align="center">
+  <img alt="Python 3.10+" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white">
+  <img alt="Streamlit" src="https://img.shields.io/badge/Streamlit-Dashboard-FF4B4B?logo=streamlit&logoColor=white">
+  <img alt="scikit-learn" src="https://img.shields.io/badge/scikit--learn-ML-F7931E?logo=scikitlearn&logoColor=white">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-285%20passed-12B76A">
+</p>
 
-## What the application does
+<p align="center">
+  <img src="assets/images/dashboard_hero.png" alt="Inventory network illustration" width="820">
+</p>
+
+## 🔎 What the application does
 
 The application combines demand forecasting and inventory optimization in one
 operational workflow:
@@ -29,27 +40,30 @@ Generate a transfer plan with the selected optimizer
 Review KPIs, charts, tables, and routes on the dashboard
 ```
 
-## Main features
+## ✨ Main features
 
-- Built-in sample dataset with 365 days of sales history
-- ZIP upload for operational datasets
-- Four demand-forecasting methods:
-  - Historical Average
-  - Moving Average
-  - Random Forest
-  - AdaBoost
-- Three inventory-transfer optimizers:
-  - Greedy
-  - Linear Programming
-  - Genetic Algorithm
-- Dataset-specific model training and reusable model artifacts
-- Interactive forecast, inventory, and transfer filters
-- Inventory and transfer KPIs
-- Downloadable transfer plans and source tables
-- OpenStreetMap network map with store markers and transfer routes
-- No map API key required
+| Area | Capabilities |
+| --- | --- |
+| 📊 Data | Built-in 365-day sample dataset and validated seven-file ZIP upload |
+| 🧠 Forecasting | Historical Average, Moving Average, Random Forest, and AdaBoost |
+| 📦 Inventory | Store-product shortage, balanced, and excess classification |
+| 🚚 Optimization | Greedy, Linear Programming, and Genetic Algorithm transfer planning |
+| 🗺️ Network | OpenStreetMap store markers and transfer routes with no API key required |
+| 📈 Analytics | Interactive filters, operational KPIs, charts, and feature importance |
+| 💾 Export | Downloadable transfer plans, feature importance, and source CSV tables |
 
-## Replenishment policy
+## 🧰 Technology stack
+
+| Layer | Technology |
+| --- | --- |
+| Application | Python, Streamlit |
+| Data processing | pandas, NumPy, SciPy |
+| Machine learning | scikit-learn, joblib |
+| Optimization | PuLP, DEAP, NetworkX |
+| Visualization | Plotly, Folium, OpenStreetMap |
+| Quality | pytest |
+
+## 📅 Replenishment policy
 
 The user can request a planning horizon from 1 to 14 days. The optimization
 pipeline converts that request into one of two replenishment targets:
@@ -62,18 +76,18 @@ pipeline converts that request into one of two replenishment targets:
 The requested horizon is still used for demand forecasting. The replenishment
 target determines the stock level used by the inventory analyzer.
 
-## Dashboard pages
+## 🖥️ Dashboard pages
 
 | Page | Purpose |
 | --- | --- |
-| Overview | Summarizes shortage recovery, transfer volume, cost, and run settings |
-| Demand Forecast | Explores predicted demand by city, store, category, and product |
-| Inventory Health | Shows shortage, balanced, and excess store-product records |
-| Transfer Plan | Reviews planned routes, quantities, costs, distance, and lead time |
-| Network Map | Displays store health and the highest-volume transfer routes |
-| Data & Models | Inspects source data, trains ML models, and shows feature importance |
+| 📊 Overview | Summarizes shortage recovery, transfer volume, cost, and run settings |
+| 📈 Demand Forecast | Explores predicted demand by city, store, category, and product |
+| 🏥 Inventory Health | Shows shortage, balanced, and excess store-product records |
+| 🚚 Transfer Plan | Reviews planned routes, quantities, costs, distance, and lead time |
+| 🗺️ Network Map | Displays store health and the highest-volume transfer routes |
+| ⚙️ Data & Models | Inspects source data, trains ML models, and shows feature importance |
 
-## Quick start
+## 🚀 Quick start
 
 ### Windows PowerShell
 
@@ -105,7 +119,7 @@ python3 -m venv .venv
 
 Streamlit normally opens the application at `http://localhost:8501`.
 
-## Using the application
+## 🧭 Using the application
 
 1. Select **Sample Dataset** or **Upload ZIP Dataset** in the sidebar.
 2. Choose a planning horizon from 1 to 14 days.
@@ -118,11 +132,11 @@ Streamlit normally opens the application at `http://localhost:8501`.
 Model artifacts are associated with a fingerprint of the active dataset. A
 model trained for a different dataset is not used accidentally.
 
-The repository includes a reviewed pretrained AdaBoost artifact for the
-bundled sample dataset. It can therefore be selected and run immediately.
-Uploaded or modified datasets still require their own compatible training.
+The bundled sample data uses the stable model scope `sample-dataset`. Uploaded
+datasets use their content fingerprint. Model artifacts remain local and are
+excluded from Git by default.
 
-## ZIP dataset format
+## 🗂️ ZIP dataset format
 
 An uploaded ZIP must contain these seven CSV files at its root:
 
@@ -148,7 +162,7 @@ Required columns for the main business tables:
 The three matrix files use `store_id` as the first column and one column for
 each destination store ID.
 
-## Generate sample data
+## 🧪 Generate sample data
 
 To regenerate all sample CSV files:
 
@@ -159,34 +173,34 @@ To regenerate all sample CSV files:
 This replaces generated files in `data/`, so review the Git diff before
 committing regenerated data.
 
-## Project structure
+## 🏗️ Project structure
 
 ```text
 inventory-transfer-optimization/
-|-- app.py
-|-- requirements.txt
-|-- README.md
-|-- assets/
+|-- app.py                    # Streamlit application entry point
+|-- requirements.txt          # Python dependencies
+|-- README.md                 # Project documentation
+|-- assets/                   # Dashboard images and CSS
 |   |-- images/
 |   `-- styles.css
-|-- data/
-|-- models/                   # Reviewed pretrained and local model artifacts
-|-- results/
+|-- data/                     # Sample CSV datasets
+|-- models/                   # Local dataset-specific model artifacts
+|-- results/                  # Generated optimization results
 |-- src/
-|   |-- config.py
-|   |-- data_generator/
-|   |-- data_ingestion/
-|   |-- dashboard/
+|   |-- config.py             # Shared project settings
+|   |-- data_generator/       # Sample retail data generation
+|   |-- data_ingestion/       # ZIP upload and extraction
+|   |-- dashboard/            # Streamlit UI and dashboard services
 |   |   `-- tabs/
-|   |-- forecasting/
-|   |-- optimizers/
-|   |-- data_loader.py
-|   |-- validator.py
-|   |-- inventory_analyzer.py
-|   |-- route_analyzer.py
+|   |-- forecasting/          # Demand forecasting models
+|   |-- optimizers/           # Inventory transfer algorithms
+|   |-- data_loader.py        # Load CSV files into ProjectData
+|   |-- validator.py          # Validate input datasets
+|   |-- inventory_analyzer.py # Detect shortage and excess inventory
+|   |-- route_analyzer.py     # Analyze transfer routes
 |   |-- optimization_pipeline.py
-|   `-- metrics.py
-`-- tests/
+|   `-- metrics.py            # Evaluate transfer-plan performance
+`-- tests/                    # Automated tests
 ```
 
 ### Component responsibilities
@@ -204,10 +218,10 @@ inventory-transfer-optimization/
 | `src/optimizers/` | Builds plans with Greedy, Linear Programming, or Genetic Algorithm methods. |
 | `src/optimization_pipeline.py` | Connects forecasting, inventory analysis, routing, optimization, and evaluation. |
 | `src/metrics.py` | Calculates shortage recovery, transfer volume, cost, and other KPIs. |
-| `models/` | Stores the reviewed sample artifact and locally trained dataset-specific artifacts. |
+| `models/` | Stores locally trained, dataset-specific forecasting artifacts. |
 | `tests/` | Verifies forecasting, optimization, ingestion, and supporting business logic. |
 
-## Run checks
+## ✅ Run checks
 
 Run the complete test suite:
 
@@ -221,7 +235,7 @@ Check Python syntax and imports used by the dashboard:
 .\.venv\Scripts\python.exe -m compileall -q app.py src\dashboard
 ```
 
-## Planned enhancements
+## 🛣️ Planned enhancements
 
 - Optuna hyperparameter tuning
 - SHAP explanations for trained forecasting models
