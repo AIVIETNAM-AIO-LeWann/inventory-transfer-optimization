@@ -94,9 +94,4 @@ Thumbs.db
 Desktop.ini
 
 # Locally trained machine-learning artifacts
-models/*
-
-# Reviewed pretrained AdaBoost artifact for the sample dataset
-!models/09f33d60d01d7e2391c4d155d941808b452d8f861ddde6fac10803c75a783134/
-models/09f33d60d01d7e2391c4d155d941808b452d8f861ddde6fac10803c75a783134/*
-!models/09f33d60d01d7e2391c4d155d941808b452d8f861ddde6fac10803c75a783134/adaboost.joblib
+models/
