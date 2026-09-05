@@ -113,17 +113,56 @@ def render_forecast_tab(
             key="forecast_city_filter",
             placeholder="All cities",
         )
-        selected_stores = filter_columns[1].multiselect(
-            "Store",
-            options=sorted(
-                forecast_data["store_id"].unique()
-            ),
-            format_func=lambda store_id: (
-                f"{store_id} · "
-                f"{store_names.get(store_id, store_id)}"
-            ),
-            key="forecast_store_filter",
-            placeholder="All stores",
+
+        available_store_data = forecast_data
+
+        if selected_cities:
+            available_store_data = (
+                available_store_data.loc[
+                    available_store_data["city"].isin(
+                        selected_cities
+                    )
+                ]
+            )
+
+        available_store_ids = sorted(
+            available_store_data[
+                "store_id"
+            ].unique()
+        )
+
+        current_store_selection = (
+            st.session_state.get(
+                "forecast_store_filter",
+                [],
+            )
+        )
+
+        valid_store_selection = [
+            store_id
+            for store_id in current_store_selection
+            if store_id in available_store_ids
+        ]
+
+        if (
+            current_store_selection
+            != valid_store_selection
+        ):
+            st.session_state[
+                "forecast_store_filter"
+            ] = valid_store_selection
+
+        selected_stores = (
+            filter_columns[1].multiselect(
+                "Store",
+                options=available_store_ids,
+                format_func=lambda store_id: (
+                    f"{store_id} · "
+                    f"{store_names.get(store_id, store_id)}"
+                ),
+                key="forecast_store_filter",
+                placeholder="All matching stores",
+            )
         )
         selected_categories = (
             filter_columns[2].multiselect(
@@ -135,18 +174,56 @@ def render_forecast_tab(
                 placeholder="All categories",
             )
         )
+
+        available_product_data = forecast_data
+
+        if selected_categories:
+            available_product_data = (
+                available_product_data.loc[
+                    available_product_data[
+                        "category"
+                    ].isin(selected_categories)
+                ]
+            )
+
+        available_product_ids = sorted(
+            available_product_data[
+                "product_id"
+            ].unique()
+        )
+
+        current_product_selection = (
+            st.session_state.get(
+                "forecast_product_filter",
+                [],
+            )
+        )
+
+        valid_product_selection = [
+            product_id
+            for product_id
+            in current_product_selection
+            if product_id in available_product_ids
+        ]
+
+        if (
+            current_product_selection
+            != valid_product_selection
+        ):
+            st.session_state[
+                "forecast_product_filter"
+            ] = valid_product_selection
+
         selected_products = (
             filter_columns[3].multiselect(
                 "Product",
-                options=sorted(
-                    forecast_data["product_id"].unique()
-                ),
+                options=available_product_ids,
                 format_func=lambda product_id: (
                     f"{product_id} · "
                     f"{product_names.get(product_id, product_id)}"
                 ),
                 key="forecast_product_filter",
-                placeholder="All products",
+                placeholder="All matching products",
             )
         )
 

@@ -144,58 +144,195 @@ def render_transfer_tab(
                 key="transfer_route_filter",
             )
         )
+
+        route_filtered_data = transfer_data.loc[
+            transfer_data["route_type"].isin(
+                selected_route_types
+            )
+        ]
+        available_source_cities = sorted(
+            route_filtered_data[
+                "from_city"
+            ].unique()
+        )
+
+        current_source_selection = (
+            st.session_state.get(
+                "transfer_source_city_filter",
+                [],
+            )
+        )
+        valid_source_selection = [
+            city
+            for city in current_source_selection
+            if city in available_source_cities
+        ]
+
+        if (
+            current_source_selection
+            != valid_source_selection
+        ):
+            st.session_state[
+                "transfer_source_city_filter"
+            ] = valid_source_selection
+
         selected_source_cities = (
             filter_columns[1].multiselect(
                 "Source City",
-                options=sorted(
-                    transfer_data[
-                        "from_city"
-                    ].unique()
-                ),
+                options=available_source_cities,
                 key="transfer_source_city_filter",
-                placeholder="All cities",
+                placeholder="All matching cities",
             )
         )
+
+        source_filtered_data = route_filtered_data
+
+        if selected_source_cities:
+            source_filtered_data = (
+                source_filtered_data.loc[
+                    source_filtered_data[
+                        "from_city"
+                    ].isin(selected_source_cities)
+                ]
+            )
+
+        available_destination_cities = sorted(
+            source_filtered_data[
+                "to_city"
+            ].unique()
+        )
+
+        current_destination_selection = (
+            st.session_state.get(
+                "transfer_destination_city_filter",
+                [],
+            )
+        )
+        valid_destination_selection = [
+            city
+            for city in current_destination_selection
+            if city in available_destination_cities
+        ]
+
+        if (
+            current_destination_selection
+            != valid_destination_selection
+        ):
+            st.session_state[
+                "transfer_destination_city_filter"
+            ] = valid_destination_selection
+
         selected_destination_cities = (
             filter_columns[2].multiselect(
                 "Destination City",
-                options=sorted(
-                    transfer_data[
-                        "to_city"
-                    ].unique()
-                ),
+                options=available_destination_cities,
                 key=(
                     "transfer_destination_city_filter"
                 ),
-                placeholder="All cities",
+                placeholder="All matching cities",
             )
         )
+
+        destination_filtered_data = (
+            source_filtered_data
+        )
+
+        if selected_destination_cities:
+            destination_filtered_data = (
+                destination_filtered_data.loc[
+                    destination_filtered_data[
+                        "to_city"
+                    ].isin(
+                        selected_destination_cities
+                    )
+                ]
+            )
+
+        available_categories = sorted(
+            destination_filtered_data[
+                "category"
+            ].unique()
+        )
+
+        current_category_selection = (
+            st.session_state.get(
+                "transfer_category_filter",
+                [],
+            )
+        )
+        valid_category_selection = [
+            category
+            for category in current_category_selection
+            if category in available_categories
+        ]
+
+        if (
+            current_category_selection
+            != valid_category_selection
+        ):
+            st.session_state[
+                "transfer_category_filter"
+            ] = valid_category_selection
+
         selected_categories = (
             filter_columns[3].multiselect(
                 "Category",
-                options=sorted(
-                    transfer_data[
-                        "category"
-                    ].unique()
-                ),
+                options=available_categories,
                 key="transfer_category_filter",
-                placeholder="All categories",
+                placeholder="All matching categories",
             )
         )
+
+        category_filtered_data = (
+            destination_filtered_data
+        )
+
+        if selected_categories:
+            category_filtered_data = (
+                category_filtered_data.loc[
+                    category_filtered_data[
+                        "category"
+                    ].isin(selected_categories)
+                ]
+            )
+
+        available_product_ids = sorted(
+            category_filtered_data[
+                "product_id"
+            ].unique()
+        )
+
+        current_product_selection = (
+            st.session_state.get(
+                "transfer_product_filter",
+                [],
+            )
+        )
+        valid_product_selection = [
+            product_id
+            for product_id
+            in current_product_selection
+            if product_id in available_product_ids
+        ]
+
+        if (
+            current_product_selection
+            != valid_product_selection
+        ):
+            st.session_state[
+                "transfer_product_filter"
+            ] = valid_product_selection
+
         selected_products = (
             filter_columns[4].multiselect(
                 "Product",
-                options=sorted(
-                    transfer_data[
-                        "product_id"
-                    ].unique()
-                ),
+                options=available_product_ids,
                 format_func=lambda product_id: (
                     f"{product_id} · "
                     f"{product_names.get(product_id, product_id)}"
                 ),
                 key="transfer_product_filter",
-                placeholder="All products",
+                placeholder="All matching products",
             )
         )
 
