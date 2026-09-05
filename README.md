@@ -159,31 +159,47 @@ committing regenerated data.
 
 ```text
 inventory-transfer-optimization/
-|-- app.py
-|-- requirements.txt
-|-- README.md
-|-- assets/
-|   |-- images/
-|   `-- styles.css
-|-- data/
-|-- models/
-|-- results/
+|-- app.py                    # Streamlit application entry point
+|-- requirements.txt          # Python dependencies
+|-- README.md                 # Project documentation
+|-- assets/                   # Dashboard images and CSS
+|-- data/                     # Sample CSV datasets
+|-- models/                   # Locally trained model artifacts
+|-- results/                  # Generated optimization results
 |-- src/
-|   |-- config.py
-|   |-- data_generator/
-|   |-- data_ingestion/
-|   |-- dashboard/
-|   |   `-- tabs/
-|   |-- forecasting/
-|   |-- optimizers/
-|   |-- data_loader.py
-|   |-- validator.py
-|   |-- inventory_analyzer.py
-|   |-- route_analyzer.py
+|   |-- config.py             # Shared project settings
+|   |-- data_generator/       # Sample retail data generation
+|   |-- data_ingestion/       # ZIP upload and extraction
+|   |-- dashboard/            # Streamlit UI and dashboard services
+|   |-- forecasting/          # Demand forecasting models
+|   |-- optimizers/           # Inventory transfer algorithms
+|   |-- data_loader.py        # Load CSV files into ProjectData
+|   |-- validator.py          # Validate input datasets
+|   |-- inventory_analyzer.py # Detect shortage and excess inventory
+|   |-- route_analyzer.py     # Analyze transfer routes
 |   |-- optimization_pipeline.py
-|   `-- metrics.py
-`-- tests/
+|   `-- metrics.py            # Evaluate transfer-plan performance
+`-- tests/                    # Automated tests
 ```
+
+### Component responsibilities
+
+| Component | Responsibility |
+| --- | --- |
+| `app.py` | Starts the Streamlit application and coordinates the dashboard workflow. |
+| `src/config.py` | Stores file paths, forecasting settings, inventory policies, routing limits, and optimizer settings. |
+| `src/data_generator/` | Generates stores, products, sales history, inventory, distance, duration, and transport-cost data. |
+| `src/data_ingestion/` | Reads an uploaded ZIP file and verifies that it contains the seven required CSV files. |
+| `src/dashboard/` | Contains reusable UI components, charts, session state, model management, map construction, and dashboard pages. |
+| `src/forecasting/` | Prepares time-series features and forecasts demand using statistical and machine-learning methods. |
+| `src/inventory_analyzer.py` | Compares current stock with forecast demand and classifies each store-product pair as shortage, balanced, or excess. |
+| `src/route_analyzer.py` | Combines distance, travel time, and transport cost information for possible transfer routes. |
+| `src/optimizers/` | Creates transfer plans using Greedy, Linear Programming, or Genetic Algorithm methods. |
+| `src/optimization_pipeline.py` | Connects forecasting, inventory analysis, routing, optimization, and evaluation into one workflow. |
+| `src/metrics.py` | Calculates shortage recovery, transfer volume, transport cost, and other optimization KPIs. |
+| `data/` | Contains the sample dataset used by the application. |
+| `models/` | Stores dataset-specific Random Forest and AdaBoost artifacts locally. |
+| `tests/` | Verifies forecasting, optimization, data ingestion, and supporting business logic. |
 
 ## Run checks
 
